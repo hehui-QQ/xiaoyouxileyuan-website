@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>🧠 记忆大师 · 完美网格</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #1f2b38, #14212b);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 16px;
+        }
+
+        .game-wrapper {
+            max-width: 680px;
+            width: 100%;
+            background: #2a3d4f;
+            border-radius: 42px;
+            padding: 24px 20px 28px;
+            box-shadow: 0 25px 35px -8px rgba(0, 0, 0, 0.8), inset 0 1px 2px rgba(255,255,240,0.1);
+            border: 1px solid #5f7b92;
+        }
+
+        /* 菜单面板 */
+        .panel {
+            background: #21313f;
+            border-radius: 36px;
+            padding: 32px 20px;
+            box-shadow: inset 0 3px 8px #0f1a21, 0 10px 15px -5px #0b141c;
+            color: #f2e3c0;
+        }
+
+        .menu-title {
+            font-size: clamp(2.2rem, 9vw, 2.8rem);
+            text-align: center;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 0 #5f4e32, 0 8px 10px black;
+            margin-bottom: 20px;
+            color: #fad983;
+            word-break: break-word;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            max-width: 280px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .btn {
+            background: #e9dbbd;
+            border: none;
+            padding: 14px 16px;
+            border-radius: 60px;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #1f2d3a;
+            box-shadow: 0 6px 0 #8b7a5c, 0 6px 12px black;
+            cursor: pointer;
+            transition: 0.07s linear;
+            text-align: center;
+            border: 1px solid #fff2d0;
+            width: 100%;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #8b7a5c, 0 6px 10px black;
+        }
+
+        .btn.small {
+            font-size: 1.2rem;
+            padding: 10px 16px;
+        }
+
+        /* 游戏区域 */
+        .game-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 8px 10px;
+            background: #1e313f;
+            border-radius: 40px;
+            padding: 8px 12px;
+            margin-bottom: 20px;
+            color: #fbebb5;
+            font-weight: 500;
+            box-shadow: inset 0 2px 5px #0f1920, 0 5px 0 #0e1a22;
+        }
+
+        .header-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.95rem;
+            background: #2b4355;
+            padding: 6px 14px;
+            border-radius: 30px;
+            box-shadow: inset 0 1px 3px black;
+            white-space: nowrap;
+        }
+
+        .header-item span {
+            color: #fad87a;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        .card-grid {
+            display: grid;
+            gap: 10px;
+            justify-content: center;
+            padding: 16px 12px;
+            background: #273b4a;
+            border-radius: 36px;
+            box-shadow: inset 0 0 0 3px #4a6579, 0 8px 0 #10222b;
+            margin-bottom: 18px;
+        }
+
+        .memory-card {
+            width: 100%;                      /* 占满网格列 */
+            aspect-ratio: 1/1;                /* 保持正方形 */
+            background: #f2e2c6;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.5rem, 5vw, 2.2rem);
+            box-shadow: 0 4px 0 #7b684d, 0 0 0 2px #b8a27b;
+            transition: all 0.07s ease;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1;
+            transform: translateY(-2px);
+        }
+
+        .memory-card.flipped, .memory-card.matched {
+            background: #d6dbb2;
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #8b7d62, 0 0 0 2px #ebc88b;
+        }
+
+        .memory-card.matched {
+            background: #96b88d;
+            box-shadow: 0 2px 0 #5c784e, 0 0 0 2px #f9e180;
+            cursor: default;
+        }
+
+        .game-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .control-btn {
+            background: #cfc09f;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 40px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1a2b36;
+            box-shadow: 0 4px 0 #807251, 0 4px 8px black;
+            cursor: pointer;
+            transition: 0.05s;
+            min-width: 110px;
+            flex: 1 1 auto;
+        }
+
+        .control-btn:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #807251, 0 4px 8px black;
+        }
+
+        /* 浮层 */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            padding: 16px;
+        }
+
+        .modal {
+            background: #2d4356;
+            border-radius: 48px;
+            padding: 28px 24px;
+            text-align: center;
+            box-shadow: 0 20px 25px black, inset 0 1px 3px #fff3d1;
+            border: 2px solid #ebc691;
+            max-width: 340px;
+            width: 100%;
+        }
+
+        .modal h2 {
+            font-size: 2.2rem;
+            color: #fedb9f;
+            margin-bottom: 12px;
+            text-shadow: 0 3px 0 #7b5f3a;
+        }
+
+        .modal p {
+            font-size: 1.3rem;
+            color: #fbebb5;
+            margin: 12px 0;
+        }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .help-text {
+            text-align: left;
+            color: #fbebb5;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin: 16px 0;
+            background: #1f3647;
+            padding: 16px;
+            border-radius: 28px;
+        }
+
+        .hide {
+            display: none !important;
+        }
+
+        @media (max-width: 480px) {
+            .game-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .header-item {
+                justify-content: center;
+                font-size: 0.9rem;
+                padding: 5px 10px;
+            }
+            .card-grid {
+                gap: 8px;
+                padding: 12px 8px;
+            }
+            .control-btn {
+                font-size: 1rem;
+                padding: 8px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="game-wrapper" id="gameWrapper">
+    <!-- 菜单容器 -->
+    <div id="menuContainer" class="panel">
+        <div id="mainMenuView">
+            <div class="menu-title">🧠 记忆大师</div>
+            <div class="menu-buttons">
+                <button class="btn" id="startGameBtn">🚀 开始挑战</button>
+                <button class="btn" id="openHelpBtn">📖 游戏说明</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏容器 -->
+    <div id="gameContainer" class="hide">
+        <div class="game-header">
+            <div class="header-item">🔙 <button id="backToMenuFromGame" style="background:none; border:none; color:#fad87a; font-size:1rem; cursor:pointer;">菜单</button></div>
+            <div class="header-item">关卡 <span id="levelDisplay">1/10</span></div>
+            <div class="header-item">⏳ <span id="timerDisplay">剩余 0s</span></div>
+            <div class="header-item">🔢 <span id="stepDisplay">0</span></div>
+        </div>
+
+        <!-- 卡片网格 -->
+        <div id="cardGrid" class="card-grid"></div>
+
+        <!-- 底部控制按钮 -->
+        <div class="game-controls">
+            <button class="control-btn" id="pauseBtn">⏸️ 暂停</button>
+            <button class="control-btn" id="restartBtn">🔄 重玩本关</button>
+        </div>
+    </div>
+
+    <!-- 浮层：暂停 / 胜利 / 失败 / 帮助 -->
+    <div id="pauseOverlay" class="overlay hide">
+        <div class="modal">
+            <h2>⏸️ 暂停</h2>
+            <div class="modal-buttons">
+                <button class="btn small" id="resumeBtn">继续游戏</button>
+                <button class="btn small" id="restartFromPause">重玩本关</button>
+                <button class="btn small" id="menuFromPause">主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="winOverlay" class="overlay hide">
+        <div class="modal">
+            <h2>🎉 通关！</h2>
+            <p>恭喜你完成本关！</p>
+            <div class="modal-buttons">
+                <button class="btn small" id="nextLevelBtn">下一关</button>
+                <button class="btn small" id="restartFromWin">重玩本关</button>
+                <button class="btn small" id="menuFromWin">主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="loseOverlay" class="overlay hide">
+        <div class="modal">
+            <h2>⏳ 超时</h2>
+            <p>时间耗尽，再接再厉</p>
+            <div class="modal-buttons">
+                <button class="btn small" id="restartFromLose">重玩本关</button>
+                <button class="btn small" id="menuFromLose">主菜单</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="helpOverlay" class="overlay hide">
+        <div class="modal" style="max-width: 400px; padding: 32px 28px;">
+            <h2>📖 游戏说明</h2>
+            <div class="help-text" style="max-height: 400px; overflow-y: auto; margin: 20px 0;">
+                <p>🧠 <strong>记忆大师规则</strong><br>
+                • 从第1关开始，逐关挑战，共10关。<br>
+                • 点击卡片翻牌，找出两张相同图案。<br>
+                • 每翻开两张计为一步。<br>
+                • 每关设有倒计时时间，剩余时间越多，分数奖励越高。<br>
+                • 得分 = 配对对数×100 - 步数×2 + 剩余时间×1。<br>
+                • 通关后可进入下一关。<br>
+                • 祝您挑战愉快！</p>
+            </div>
+            <button class="btn small" id="closeHelpBtn">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+    // ---------- 关卡数据 ----------
+    const LEVELS = [
+        { rows: 2, cols: 3, timeLimit: 30 },
+        { rows: 3, cols: 4, timeLimit: 50 },
+        { rows: 4, cols: 4, timeLimit: 70 },
+        { rows: 4, cols: 4, timeLimit: 60 },
+        { rows: 4, cols: 5, timeLimit: 80 },
+        { rows: 5, cols: 4, timeLimit: 80 },
+        { rows: 5, cols: 6, timeLimit: 120 },
+        { rows: 6, cols: 6, timeLimit: 150 },
+        { rows: 6, cols: 6, timeLimit: 130 },
+        { rows: 6, cols: 8, timeLimit: 200 }
+    ];
+
+    const ICON_POOL = ['🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐨','🐸','🐧','🐦','🐤','🐌','🐝','🦋','🐙','🦑','🐬','🐳','🦭','🐊','🦎','🐍'];
+
+    let currentLevel = 1;
+    let unlockedLevel = 1;
+    let cards = [];
+    let flippedIndices = [];
+    let lockBoard = false;
+    let steps = 0;
+    let elapsedSeconds = 0;
+    let timerInterval = null;
+    let gameActive = false;
+    let gameOver = false;
+    let gamePaused = false;
+    let matchedPairs = 0;
+    let totalPairs = 0;
+
+    // DOM 元素
+    const menuContainer = document.getElementById('menuContainer');
+    const gameContainer = document.getElementById('gameContainer');
+    const mainMenuView = document.getElementById('mainMenuView');
+    const cardGrid = document.getElementById('cardGrid');
+    const levelDisplaySpan = document.getElementById('levelDisplay');
+    const timerDisplay = document.getElementById('timerDisplay');
+    const stepDisplay = document.getElementById('stepDisplay');
+
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const winOverlay = document.getElementById('winOverlay');
+    const loseOverlay = document.getElementById('loseOverlay');
+    const helpOverlay = document.getElementById('helpOverlay');
+
+    // 按钮
+    document.getElementById('startGameBtn').addEventListener('click', ()=>{ loadLevel(1); showGame(); });
+    document.getElementById('openHelpBtn').addEventListener('click', ()=>{ helpOverlay.classList.remove('hide'); });
+    document.getElementById('closeHelpBtn').addEventListener('click', ()=>{ helpOverlay.classList.add('hide'); });
+    document.getElementById('backToMenuFromGame').addEventListener('click', ()=>{ returnToMenu(); });
+    document.getElementById('pauseBtn').addEventListener('click', pauseGame);
+    document.getElementById('restartBtn').addEventListener('click', ()=>{ restartLevel(); });
+
+    document.getElementById('resumeBtn').addEventListener('click', resumeGame);
+    document.getElementById('restartFromPause').addEventListener('click', ()=>{ hideAllOverlays(); restartLevel(); });
+    document.getElementById('menuFromPause').addEventListener('click', ()=>{ hideAllOverlays(); returnToMenu(); });
+
+    document.getElementById('nextLevelBtn').addEventListener('click', nextLevel);
+    document.getElementById('restartFromWin').addEventListener('click', ()=>{ hideAllOverlays(); restartLevel(); });
+    document.getElementById('menuFromWin').addEventListener('click', ()=>{ hideAllOverlays(); returnToMenu(); });
+
+    document.getElementById('restartFromLose').addEventListener('click', ()=>{ hideAllOverlays(); restartLevel(); });
+    document.getElementById('menuFromLose').addEventListener('click', ()=>{ hideAllOverlays(); returnToMenu(); });
+
+    function hideAllOverlays() {
+        pauseOverlay.classList.add('hide');
+        winOverlay.classList.add('hide');
+        loseOverlay.classList.add('hide');
+        helpOverlay.classList.add('hide');
+    }
+
+    function stopTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+    }
+
+    function startTimer() {
+        if (timerInterval || !gameActive || gameOver || gamePaused) return;
+        
+        // 确保计时器从正确的时间开始
+        updateTimerDisplay();
+        
+        timerInterval = setInterval(() => {
+            if (!gameActive || gamePaused || gameOver) return;
+            elapsedSeconds++;
+            updateTimerDisplay();
+
+            const level = LEVELS[currentLevel-1];
+            const remaining = level.timeLimit - elapsedSeconds;
+            if (remaining <= 0) {
+                gameActive = false;
+                gameOver = true;
+                stopTimer();
+                loseOverlay.classList.remove('hide');
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const level = LEVELS[currentLevel-1];
+        const remaining = Math.max(0, level.timeLimit - elapsedSeconds);
+        timerDisplay.innerText = "剩余 " + remaining + "秒";
+    }
+
+
+
+    function loadLevel(level) {
+        currentLevel = level;
+        const cfg = LEVELS[level-1];
+        totalPairs = (cfg.rows * cfg.cols) / 2;
+        let neededIcons = totalPairs;
+        let usedIcons = ICON_POOL.slice(0, neededIcons);
+        let deck = [];
+        usedIcons.forEach((icon, idx) => {
+            deck.push({ id: idx, icon, matched: false });
+            deck.push({ id: idx, icon, matched: false });
+        });
+        for (let i = deck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [deck[i], deck[j]] = [deck[j], deck[i]];
+        }
+        cards = deck;
+        flippedIndices = [];
+        lockBoard = false;
+        steps = 0;
+        matchedPairs = 0;
+        elapsedSeconds = 0;
+        gameActive = true;
+        gameOver = false;
+        gamePaused = false;
+        stopTimer();
+
+        levelDisplaySpan.innerText = `${currentLevel}/10`;
+        stepDisplay.innerText = steps;
+        updateTimerDisplay();
+        renderBoard();
+    }
+
+    function renderBoard() {
+        const cfg = LEVELS[currentLevel-1];
+        // 使用 minmax 使列宽在一定范围内自适应，卡片占满列宽，避免分离
+        cardGrid.style.gridTemplateColumns = `repeat(${cfg.cols}, minmax(55px, 70px))`;
+        let html = '';
+        cards.forEach((card, idx) => {
+            let classes = 'memory-card';
+            if (card.matched) classes += ' matched';
+            else if (flippedIndices.includes(idx)) classes += ' flipped';
+            html += `<div class="${classes}" data-index="${idx}">${card.matched || flippedIndices.includes(idx) ? card.icon : '❓'}</div>`;
+        });
+        cardGrid.innerHTML = html;
+
+        if (matchedPairs === totalPairs && totalPairs > 0) {
+            gameActive = false;
+            gameOver = true;
+            stopTimer();
+            winOverlay.classList.remove('hide');
+            if (currentLevel === unlockedLevel && currentLevel < 10) {
+                unlockedLevel++;
+            }
+            return;
+        }
+    }
+
+    function handleCardClick(e) {
+        const cardDiv = e.target.closest('.memory-card');
+        if (!cardDiv) return;
+        if (!gameActive || gamePaused || gameOver || lockBoard) return;
+
+        const index = parseInt(cardDiv.dataset.index);
+        const card = cards[index];
+        if (card.matched) return;
+        if (flippedIndices.includes(index)) return;
+        if (flippedIndices.length === 2) return;
+
+        if (elapsedSeconds === 0 && !timerInterval) {
+            gameActive = true;
+            startTimer();
+        }
+
+        flippedIndices.push(index);
+        renderBoard();
+
+        if (flippedIndices.length === 2) {
+            steps++;
+            stepDisplay.innerText = steps;
+
+            const idx1 = flippedIndices[0];
+            const idx2 = flippedIndices[1];
+            const card1 = cards[idx1];
+            const card2 = cards[idx2];
+
+            if (card1.id === card2.id) {
+                cards[idx1].matched = true;
+            cards[idx2].matched = true;
+            matchedPairs++;
+            flippedIndices = [];
+            renderBoard();
+            } else {
+                lockBoard = true;
+                setTimeout(() => {
+                    flippedIndices = [];
+                    lockBoard = false;
+                    renderBoard();
+                }, 600);
+            }
+        }
+    }
+
+    cardGrid.addEventListener('click', handleCardClick);
+
+    function restartLevel() {
+        stopTimer();
+        
+        // 平滑重置游戏状态，避免完全重新渲染
+        flippedIndices = [];
+        lockBoard = false;
+        steps = 0;
+        matchedPairs = 0;
+        elapsedSeconds = 0;
+        gameActive = true;
+        gameOver = false;
+        gamePaused = false;
+        
+        // 重置卡片状态但不重新生成卡片（保持相同的卡片布局）
+        cards.forEach(card => {
+            card.matched = false;
+        });
+        
+        // 更新显示
+        stepDisplay.innerText = steps;
+        updateTimerDisplay();
+        
+        // 平滑重新渲染卡片（不改变网格布局）
+        smoothRerenderBoard();
+    }
+    
+    function smoothRerenderBoard() {
+        // 使用更平滑的动画效果
+        const cardElements = cardGrid.querySelectorAll('.memory-card');
+        
+        if (cardElements.length === 0) {
+            // 如果没有卡片元素，直接渲染
+            renderBoard();
+            return;
+        }
+        
+        // 添加淡出和旋转动画
+        cardElements.forEach((card, index) => {
+            card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+            card.style.opacity = '0.3';
+            card.style.transform = 'scale(0.85) rotateY(90deg)';
+        });
+        
+        // 短暂延迟后更新卡片内容并淡入
+        setTimeout(() => {
+            let html = '';
+            cards.forEach((card, idx) => {
+                let classes = 'memory-card';
+                if (card.matched) classes += ' matched';
+                else if (flippedIndices.includes(idx)) classes += ' flipped';
+                html += `<div class="${classes}" data-index="${idx}">${card.matched || flippedIndices.includes(idx) ? card.icon : '❓'}</div>`;
+            });
+            cardGrid.innerHTML = html;
+            
+            // 重新添加事件监听器
+            cardGrid.addEventListener('click', handleCardClick);
+            
+            // 添加淡入和旋转动画
+            const newCards = cardGrid.querySelectorAll('.memory-card');
+            newCards.forEach((card, index) => {
+                card.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.85) rotateY(-90deg)';
+                
+                // 触发重排以应用初始状态
+                card.offsetHeight;
+                
+                // 淡入动画，添加延迟实现波浪效果
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1) rotateY(0deg)';
+                }, index * 30); // 波浪效果，每个卡片延迟30ms
+            });
+        }, 400);
+    }
+
+    function pauseGame() {
+        if (!gameActive || gamePaused || gameOver) return;
+        gamePaused = true;
+        stopTimer();
+        pauseOverlay.classList.remove('hide');
+    }
+
+    function resumeGame() {
+        gamePaused = false;
+        pauseOverlay.classList.add('hide');
+        if (gameActive && !gameOver) {
+            startTimer();
+        }
+    }
+
+    function returnToMenu() {
+        stopTimer();
+        hideAllOverlays();
+        gameContainer.classList.add('hide');
+        menuContainer.classList.remove('hide');
+    }
+
+    function showGame() {
+        menuContainer.classList.add('hide');
+        gameContainer.classList.remove('hide');
+    }
+
+    function nextLevel() {
+        if (currentLevel < 10) {
+            loadLevel(currentLevel + 1);
+            winOverlay.classList.add('hide');
+        } else {
+            winOverlay.classList.add('hide');
+            alert('恭喜你完成所有关卡！');
+            returnToMenu();
+        }
+    }
+})();
+</script>
+</body>
+</html>

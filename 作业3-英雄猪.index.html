@@ -1,0 +1,4874 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小猪闯关</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a0a2e 0%, #2d1b4e 50%, #1a0a2e 100%);
+            font-family: 'Microsoft YaHei', 'SimHei', sans-serif;
+            overflow: hidden;
+        }
+        #gameContainer {
+            position: relative;
+            box-shadow: 0 0 60px rgba(255, 200, 100, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        #gameCanvas {
+            display: block;
+            border: 6px solid #5d3a1a;
+            border-radius: 12px;
+            background: #000;
+        }
+        #ui {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.9), 0 0 10px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+        .health-bar {
+            width: 140px;
+            height: 20px;
+            background: linear-gradient(180deg, #2a1a1a, #1a0a0a);
+            border: 3px solid #ffd700;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 8px;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3), inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .health-fill {
+            height: 100%;
+            background: linear-gradient(180deg, #ff6666 0%, #cc0000 50%, #990000 100%);
+            transition: width 0.3s ease;
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.3);
+        }
+        .coin-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0,0,0,0.6);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 2px solid #ffd700;
+        }
+        .coin-icon {
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle at 30% 30%, #ffed4a, #ffd700, #cc9900);
+            border-radius: 50%;
+            box-shadow: 0 0 8px #ffd700;
+        }
+        #startScreen, #gameOverScreen, #winScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, rgba(26, 10, 46, 0.95) 0%, rgba(45, 27, 78, 0.95) 50%, rgba(26, 10, 46, 0.95) 100%);
+            color: white;
+            z-index: 20;
+        }
+        #gameOverScreen, #winScreen {
+            display: none;
+        }
+        h1 {
+            font-size: 36px;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 3px 3px 6px rgba(0,0,0,0.8);
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+        }
+        .subtitle {
+            color: #ffb6c1;
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(255, 182, 193, 0.5);
+        }
+        .btn {
+            padding: 16px 50px;
+            font-size: 22px;
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 50%, #ff6600 100%);
+            color: #3d2000;
+            border: 3px solid #fff;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5), inset 0 2px 5px rgba(255,255,255,0.3);
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 0 8px 30px rgba(255, 215, 0, 0.7), inset 0 2px 5px rgba(255,255,255,0.3);
+        }
+        .instructions {
+            margin-top: 25px;
+            text-align: center;
+            line-height: 2;
+            color: #ddd;
+            background: rgba(0,0,0,0.3);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,215,0,0.3);
+        }
+        .instructions p {
+            margin: 5px 0;
+        }
+        .key-hint {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        #levelInfo {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.9), rgba(101, 67, 33, 0.9));
+            color: #ffd700;
+            font-size: 18px;
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 2px solid #ffd700;
+        }
+        
+        /* 音效控制按钮 */
+        #soundControl {
+            position: absolute;
+            top: 15px;
+            left: 170px;
+            z-index: 10;
+        }
+        
+        #soundButton {
+            background: linear-gradient(135deg, #4a90d9 0%, #357abd 50%, #2a5f8f 100%);
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 3px 15px rgba(74, 144, 217, 0.5);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #soundButton:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(74, 144, 217, 0.7);
+        }
+        
+        #soundButton.muted {
+            background: linear-gradient(135deg, #888 0%, #666 50%, #444 100%);
+        }
+        
+        /* 游戏菜单样式 */
+        #gameMenu {
+            position: absolute;
+            top: 15px;
+            right: 150px;
+            z-index: 10;
+        }
+        
+        #menuButton {
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 50%, #ff6600 100%);
+            color: #3d2000;
+            border: 2px solid #fff;
+            border-radius: 20px;
+            padding: 8px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 3px 15px rgba(255, 215, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+        
+        #menuButton:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.7);
+        }
+        
+        #menuDropdown {
+            position: absolute;
+            top: 40px;
+            right: 0;
+            background: linear-gradient(135deg, rgba(26, 10, 46, 0.95), rgba(45, 27, 78, 0.95));
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            padding: 10px 0;
+            min-width: 150px;
+            display: none;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+        }
+        
+        .menuItem {
+            padding: 10px 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        
+        .menuItem:last-child {
+            border-bottom: none;
+        }
+        
+        .menuItem:hover {
+            background: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+        
+        /* 游戏玩法弹窗样式 */
+        #gameplayModal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        #gameplayContent {
+            background: linear-gradient(135deg, rgba(26, 10, 46, 0.98), rgba(45, 27, 78, 0.98));
+            border: 3px solid #ffd700;
+            border-radius: 20px;
+            padding: 30px 40px;
+            max-width: 500px;
+            max-height: 80%;
+            overflow-y: auto;
+            color: white;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
+        }
+        
+        #gameplayContent h2 {
+            color: #ffd700;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 28px;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+        
+        #gameplayContent h3 {
+            color: #ff8c00;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 18px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.3);
+            padding-bottom: 5px;
+        }
+        
+        #gameplayContent p {
+            line-height: 1.8;
+            margin: 8px 0;
+            color: #ddd;
+        }
+        
+        #gameplayContent .key {
+            display: inline-block;
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 100%);
+            color: #3d2000;
+            padding: 2px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 2px;
+            font-size: 14px;
+        }
+        
+        #gameplayContent .tip {
+            background: rgba(255, 215, 0, 0.1);
+            border-left: 3px solid #ffd700;
+            padding: 10px 15px;
+            margin: 15px 0;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        #gameplayContent .close-btn {
+            display: block;
+            width: 100%;
+            margin-top: 25px;
+            padding: 12px;
+            background: linear-gradient(135deg, #ffd700 0%, #ff8c00 50%, #ff6600 100%);
+            color: #3d2000;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        #gameplayContent .close-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.5);
+        }
+        
+        #gameplayContent ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        #gameplayContent li {
+            margin: 8px 0;
+            color: #ddd;
+        }
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+        #keyHint {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.4);
+            padding: 5px 15px;
+            border-radius: 15px;
+        }
+        .princess {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="960" height="540"></canvas>
+        <div id="ui">
+            <div class="health-bar"><div class="health-fill" id="healthFill"></div></div>
+            <div class="coin-display">
+                <div class="coin-icon"></div>
+                <span id="coinCount">0 / 100</span>
+            </div>
+        </div>
+        <div id="levelInfo">第 1 关</div>
+        <div id="soundControl">
+            <button id="soundButton" onclick="toggleSound()">🔊</button>
+        </div>
+        <div id="gameMenu">
+            <button id="menuButton">菜单</button>
+            <div id="menuDropdown">
+                <div class="menuItem" onclick="showGameplay()">游戏玩法</div>
+                <div class="menuItem" onclick="toggleSound()">音效开关</div>
+                <div class="menuItem" onclick="togglePause()">暂停游戏</div>
+                <div class="menuItem" onclick="restartGame()">重新开始</div>
+            </div>
+        </div>
+        <div id="keyHint">←→ 移动 | ↑ 跳跃 | ↓ 下蹲防御 | 空格 攻击</div>
+
+        <div id="startScreen">
+            <h1>小猪闯关</h1>
+            <button class="btn" onclick="startGame()">开始冒险</button>
+            <div class="instructions">
+                <p><span class="key-hint">← →</span> 左右移动 | <span class="key-hint">↑</span> 跳跃</p>
+                <p><span class="key-hint">↓</span> 下蹲防御（抵挡攻击）</p>
+                <p><span class="key-hint">空格</span> 挥剑攻击敌人</p>
+                <p>收集 <span class="key-hint">100金币</span> 开启城堡大门</p>
+                <p>闯过三关，救出美美粉红公主！</p>
+            </div>
+        </div>
+
+        <div id="gameOverScreen">
+            <h1>游戏结束</h1>
+            <div class="subtitle">英雄猪壮烈牺牲...</div>
+            <button class="btn" onclick="restartGame()">重新挑战</button>
+        </div>
+
+        <div id="winScreen">
+            <canvas id="weddingCanvas" width="960" height="540" style="position: absolute; top: 0; left: 0;"></canvas>
+            <h1 style="position: relative; z-index: 10; margin-top: 50px;">恭喜通关！</h1>
+            <div class="subtitle" style="position: relative; z-index: 10;">英雄猪成功救出美美粉红公主！</div>
+            <p style="color: #ffb6c1; margin: 20px; font-size: 16px; position: relative; z-index: 10;">爱情的力量战胜了一切邪恶！</p>
+            <button class="btn" onclick="restartGame()" style="position: relative; z-index: 10;">再玩一次</button>
+        </div>
+
+        <!-- 结婚剧情场景 -->
+        <div id="weddingScene" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 30;">
+            <canvas id="weddingSceneCanvas" width="960" height="540" style="position: absolute; top: 0; left: 0;"></canvas>
+            <div id="weddingText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; color: white; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); opacity: 0; transition: opacity 1s;"></div>
+            <button id="weddingRestartBtn" class="btn" onclick="restartGame()" style="display: none; position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 40; font-size: 20px; padding: 15px 40px;">再玩一次</button>
+        </div>
+
+        <!-- 游戏玩法弹窗 -->
+        <div id="gameplayModal">
+            <div id="gameplayContent">
+                <h2>游戏玩法说明</h2>
+                
+                <h3>基本操作</h3>
+                <p><span class="key">←</span> <span class="key">→</span> 左右移动</p>
+                <p><span class="key">↑</span> 跳跃</p>
+                <p><span class="key">↓</span> 下蹲防御（可抵挡敌人攻击）</p>
+                <p><span class="key">空格</span> 挥剑攻击敌人</p>
+                
+                <h3>游戏目标</h3>
+                <p>闯过三关，收集 <strong style="color: #ffd700;">100金币</strong> 开启城堡大门，救出美美粉红公主！</p>
+                
+                <h3>关卡介绍</h3>
+                <ul>
+                    <li><strong style="color: #ffcc66;">第一关 - 山林晨曦：</strong>躲避飞镖机关，可攻击摧毁机关获取金币</li>
+                    <li><strong style="color: #90EE90;">第二关 - 密林蛇窟：</strong>对抗灵蛇，击败灵蛇可获得金币</li>
+                    <li><strong style="color: #DDA0DD;">第三关 - 幽暗古堡：</strong>挑战紫衣女巫，可挥剑消除毒气</li>
+                </ul>
+                
+                <h3>获取金币</h3>
+                <ul>
+                    <li>顶撞金色砖块获得金币（带问号标记）</li>
+                    <li>击败敌人掉落金币</li>
+                    <li>挥剑消除毒气可获得少量金币</li>
+                    <li>寻找隐藏的砖块获取大量金币</li>
+                </ul>
+                
+                <h3>战斗技巧</h3>
+                <div class="tip">
+                    <p><strong>防御：</strong>下蹲时举起盾牌，可以抵挡敌人的攻击（飞镖、毒气、蛇咬）。注意：下蹲时<strong style="color: #ff6600;">无法攻击</strong>，只能防御！</p>
+                </div>
+                <div class="tip">
+                    <p><strong>攻击：</strong>站立时挥剑可以击败敌人、摧毁机关、消除毒气云</p>
+                </div>
+                <div class="tip">
+                    <p><strong>策略：</strong>面对敌人攻击时先下蹲防御，等敌人攻击间隙站起反击！</p>
+                </div>
+                
+                <h3>道具说明</h3>
+                <p><span style="color: #ff6666;">❤ 血包：</span>第二、三关出现，拾取后恢复全部生命值</p>
+                
+                <button class="close-btn" onclick="closeGameplay()">知道了，开始冒险！</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 音效系统 ============
+        let audioContext = null;
+        let isSoundEnabled = true;
+        let bgmOscillator = null;
+        let bgmGain = null;
+        let bgmPlaying = false;
+        
+        // 初始化音频上下文
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // 播放音效
+        function playSound(type) {
+            if (!isSoundEnabled || !audioContext) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            switch(type) {
+                case 'jump':
+                    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.15);
+                    break;
+                    
+                case 'attack':
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                    break;
+                    
+                case 'hit':
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(150, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                    break;
+                    
+                case 'coin':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audioContext.currentTime);
+                    oscillator.frequency.setValueAtTime(1108, audioContext.currentTime + 0.05);
+                    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.15);
+                    break;
+                    
+                case 'dartDeath':
+                    // 飞镖发射器爆炸 - 金属碰撞声
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, audioContext.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                    // 添加第二层噪音效果
+                    const noise1 = audioContext.createOscillator();
+                    const gain1 = audioContext.createGain();
+                    noise1.connect(gain1);
+                    gain1.connect(audioContext.destination);
+                    noise1.type = 'sawtooth';
+                    noise1.frequency.setValueAtTime(1500, audioContext.currentTime);
+                    noise1.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.1);
+                    gain1.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    gain1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    noise1.start(audioContext.currentTime);
+                    noise1.stop(audioContext.currentTime + 0.1);
+                    break;
+                    
+                case 'snakeDeath':
+                    // 蛇死亡 - 嘶嘶声
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.4);
+                    gainNode.gain.setValueAtTime(0.18, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.4);
+                    // 添加嘶嘶效果
+                    const hiss = audioContext.createOscillator();
+                    const hissGain = audioContext.createGain();
+                    hiss.connect(hissGain);
+                    hissGain.connect(audioContext.destination);
+                    hiss.type = 'triangle';
+                    hiss.frequency.setValueAtTime(300, audioContext.currentTime + 0.1);
+                    hiss.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.35);
+                    hissGain.gain.setValueAtTime(0.15, audioContext.currentTime + 0.1);
+                    hissGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.35);
+                    hiss.start(audioContext.currentTime + 0.1);
+                    hiss.stop(audioContext.currentTime + 0.35);
+                    break;
+                    
+                case 'witchDeath':
+                    // 女巫死亡 - 神秘爆炸声
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.5);
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.5);
+                    // 添加神秘的和弦
+                    const chord = audioContext.createOscillator();
+                    const chordGain = audioContext.createGain();
+                    chord.connect(chordGain);
+                    chordGain.connect(audioContext.destination);
+                    chord.type = 'triangle';
+                    chord.frequency.setValueAtTime(200, audioContext.currentTime);
+                    chord.frequency.setValueAtTime(150, audioContext.currentTime + 0.2);
+                    chordGain.gain.setValueAtTime(0.15, audioContext.currentTime);
+                    chordGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                    chord.start(audioContext.currentTime);
+                    chord.stop(audioContext.currentTime + 0.4);
+                    break;
+                    
+                case 'playerHurt':
+                    // 玩家受伤 - 痛苦的叫声
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(350, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(150, audioContext.currentTime + 0.25);
+                    gainNode.gain.setValueAtTime(0.25, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.3);
+                    break;
+                    
+                case 'playerDeath':
+                    // 玩家死亡 - 悲伤的下坠音
+                    const deathNotes = [400, 350, 300, 200, 100];
+                    deathNotes.forEach((freq, i) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.15);
+                        gain.gain.setValueAtTime(0.25, audioContext.currentTime + i * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.2);
+                        osc.start(audioContext.currentTime + i * 0.15);
+                        osc.stop(audioContext.currentTime + i * 0.15 + 0.2);
+                    });
+                    return;
+                    
+                case 'levelUp':
+                    const notes = [523, 659, 784, 1047];
+                    notes.forEach((freq, i) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.1);
+                        gain.gain.setValueAtTime(0.15, audioContext.currentTime + i * 0.1);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.1 + 0.2);
+                        osc.start(audioContext.currentTime + i * 0.1);
+                        osc.stop(audioContext.currentTime + i * 0.1 + 0.2);
+                    });
+                    return;
+                    
+                case 'gameOver':
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(30, audioContext.currentTime + 0.8);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.8);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.8);
+                    break;
+                    
+                case 'victory':
+                    const victoryNotes = [523, 659, 784, 659, 784, 1047];
+                    victoryNotes.forEach((freq, i) => {
+                        const osc = audioContext.createOscillator();
+                        const gain = audioContext.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioContext.destination);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, audioContext.currentTime + i * 0.15);
+                        gain.gain.setValueAtTime(0.2, audioContext.currentTime + i * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + i * 0.15 + 0.3);
+                        osc.start(audioContext.currentTime + i * 0.15);
+                        osc.stop(audioContext.currentTime + i * 0.15 + 0.3);
+                    });
+                    return;
+                    
+                case 'wedding':
+                    // 浪漫婚礼音乐 - 梦幻爱情主题 (约30秒)
+                    const weddingMelody = [
+                        // 第一段 - 柔美的开始 (B小调转D大调)
+                        { note: 494, duration: 0.8 },  // B4 - 温柔开场
+                        { note: 523, duration: 0.4 },  // C5
+                        { note: 587, duration: 0.8 },  // D5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 587, duration: 0.8 },  // D5
+                        { note: 523, duration: 0.4 },  // C5
+                        { note: 494, duration: 0.8 },  // B4
+                        { note: 440, duration: 0.4 },  // A4
+                        { note: 494, duration: 1.2 },  // B4 - 深情
+                        { note: 0, duration: 0.4 },    // 休止
+
+                        // 第二段 - 爱的诉说
+                        { note: 587, duration: 0.8 },  // D5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 698, duration: 0.8 },  // F5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 587, duration: 0.6 },  // D5
+                        { note: 523, duration: 0.4 },  // C5
+                        { note: 494, duration: 0.8 },  // B4
+                        { note: 523, duration: 0.4 },  // C5
+                        { note: 587, duration: 1.2 },  // D5
+                        { note: 0, duration: 0.4 },    // 休止
+
+                        // 第三段 - 转D大调，阳光明媚
+                        { note: 587, duration: 0.6 },  // D5
+                        { note: 659, duration: 0.6 },  // E5
+                        { note: 784, duration: 0.8 },  // G5 - 明亮
+                        { note: 698, duration: 0.4 },  // F5
+                        { note: 659, duration: 0.6 },  // E5
+                        { note: 587, duration: 0.4 },  // D5
+                        { note: 523, duration: 0.8 },  // C5
+                        { note: 587, duration: 0.4 },  // D5
+                        { note: 659, duration: 1.2 },  // E5
+                        { note: 0, duration: 0.4 },    // 休止
+
+                        // 第四段 - 幸福攀升
+                        { note: 659, duration: 0.6 },  // E5
+                        { note: 784, duration: 0.6 },  // G5
+                        { note: 880, duration: 0.8 },  // A5 - 高潮
+                        { note: 784, duration: 0.4 },  // G5
+                        { note: 698, duration: 0.6 },  // F5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 587, duration: 0.8 },  // D5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 784, duration: 1.2 },  // G5
+                        { note: 0, duration: 0.4 },    // 休止
+
+                        // 第五段 - 深情告白
+                        { note: 880, duration: 0.8 },  // A5
+                        { note: 784, duration: 0.4 },  // G5
+                        { note: 698, duration: 0.6 },  // F5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 587, duration: 0.6 },  // D5
+                        { note: 523, duration: 0.4 },  // C5
+                        { note: 587, duration: 0.6 },  // D5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 587, duration: 1.6 },  // D5 - 延长
+                        { note: 0, duration: 0.4 },    // 休止
+
+                        // 第六段 - 温柔回应
+                        { note: 392, duration: 0.8 },  // G4
+                        { note: 440, duration: 0.4 },  // A4
+                        { note: 494, duration: 0.8 },  // B4
+                        { note: 523, duration: 0.4 },  // C5
+                        { note: 494, duration: 0.6 },  // B4
+                        { note: 440, duration: 0.4 },  // A4
+                        { note: 392, duration: 0.8 },  // G4
+                        { note: 440, duration: 0.4 },  // A4
+                        { note: 494, duration: 1.2 },  // B4
+                        { note: 0, duration: 0.4 },    // 休止
+
+                        // 第七段 - 永恒誓言
+                        { note: 494, duration: 0.6 },  // B4
+                        { note: 523, duration: 0.6 },  // C5
+                        { note: 587, duration: 0.8 },  // D5
+                        { note: 659, duration: 0.4 },  // E5
+                        { note: 587, duration: 0.6 },  // D5
+                        { note: 523, duration: 0.4 },  // C5
+                        { note: 494, duration: 0.6 },  // B4
+                        { note: 440, duration: 0.4 },  // A4
+                        { note: 392, duration: 1.2 },  // G4
+                        { note: 0, duration: 0.4 },    // 休止
+
+                        // 尾声 - 爱的归宿 (渐慢)
+                        { note: 587, duration: 1.0 },  // D5
+                        { note: 494, duration: 1.0 },  // B4
+                        { note: 392, duration: 2.0 },  // G4 - 最后的和弦
+                        { note: 294, duration: 3.0 },  // D4 - 低音结尾
+                    ];
+
+                    let weddingTime = audioContext.currentTime;
+                    weddingMelody.forEach(item => {
+                        if (item.note > 0) {
+                            // 主旋律 - 柔和的正弦波
+                            const osc = audioContext.createOscillator();
+                            const gain = audioContext.createGain();
+                            osc.connect(gain);
+                            gain.connect(audioContext.destination);
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(item.note, weddingTime);
+                            gain.gain.setValueAtTime(0, weddingTime);
+                            gain.gain.linearRampToValueAtTime(0.12, weddingTime + 0.05);
+                            gain.gain.setValueAtTime(0.12, weddingTime + item.duration * 0.6);
+                            gain.gain.exponentialRampToValueAtTime(0.01, weddingTime + item.duration);
+                            osc.start(weddingTime);
+                            osc.stop(weddingTime + item.duration);
+
+                            // 和声 - 温暖的低音
+                            const harmony = audioContext.createOscillator();
+                            const harmonyGain = audioContext.createGain();
+                            harmony.connect(harmonyGain);
+                            harmonyGain.connect(audioContext.destination);
+                            harmony.type = 'triangle';
+                            harmony.frequency.setValueAtTime(item.note / 2, weddingTime);
+                            harmonyGain.gain.setValueAtTime(0, weddingTime);
+                            harmonyGain.gain.linearRampToValueAtTime(0.06, weddingTime + 0.05);
+                            harmonyGain.gain.exponentialRampToValueAtTime(0.01, weddingTime + item.duration);
+                            harmony.start(weddingTime);
+                            harmony.stop(weddingTime + item.duration);
+
+                            // 第三层 - 空灵的高音
+                            const high = audioContext.createOscillator();
+                            const highGain = audioContext.createGain();
+                            high.connect(highGain);
+                            highGain.connect(audioContext.destination);
+                            high.type = 'sine';
+                            high.frequency.setValueAtTime(item.note * 2, weddingTime);
+                            highGain.gain.setValueAtTime(0.02, weddingTime);
+                            highGain.gain.exponentialRampToValueAtTime(0.001, weddingTime + item.duration);
+                            high.start(weddingTime);
+                            high.stop(weddingTime + item.duration);
+                        }
+                        weddingTime += item.duration;
+                    });
+                    return;
+                    
+                case 'heal':
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.2);
+                    gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.25);
+                    break;
+                    
+                case 'block':
+                    oscillator.type = 'triangle';
+                    oscillator.frequency.setValueAtTime(300, audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                    break;
+            }
+        }
+        
+        // 背景音乐
+        function startBGM() {
+            if (!isSoundEnabled || !audioContext || bgmPlaying) return;
+            
+            bgmPlaying = true;
+            playBGMLoop();
+        }
+        
+        function playBGMLoop() {
+            if (!isSoundEnabled || !bgmPlaying) return;
+            
+            // 简单的背景音乐旋律
+            const melody = [
+                { note: 262, duration: 0.3 },  // C4
+                { note: 294, duration: 0.3 },  // D4
+                { note: 330, duration: 0.3 },  // E4
+                { note: 262, duration: 0.3 },  // C4
+                { note: 330, duration: 0.3 },  // E4
+                { note: 392, duration: 0.3 },  // G4
+                { note: 392, duration: 0.3 },  // G4
+                { note: 349, duration: 0.3 },  // F4
+                { note: 330, duration: 0.3 },  // E4
+                { note: 294, duration: 0.3 },  // D4
+                { note: 262, duration: 0.6 },  // C4
+                { note: 0, duration: 0.3 },    // 休止符
+            ];
+            
+            let time = audioContext.currentTime;
+            
+            melody.forEach(item => {
+                if (item.note > 0) {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(item.note, time);
+                    gain.gain.setValueAtTime(0.05, time);
+                    gain.gain.exponentialRampToValueAtTime(0.01, time + item.duration * 0.9);
+                    
+                    osc.start(time);
+                    osc.stop(time + item.duration);
+                }
+                time += item.duration;
+            });
+            
+            // 循环播放
+            const totalDuration = melody.reduce((sum, item) => sum + item.duration, 0);
+            setTimeout(() => {
+                if (bgmPlaying && isSoundEnabled) {
+                    playBGMLoop();
+                }
+            }, totalDuration * 1000);
+        }
+        
+        function stopBGM() {
+            bgmPlaying = false;
+        }
+        
+        // 切换音效开关
+        function toggleSound() {
+            initAudio();
+            isSoundEnabled = !isSoundEnabled;
+            const btn = document.getElementById('soundButton');
+            if (isSoundEnabled) {
+                btn.textContent = '🔊';
+                btn.classList.remove('muted');
+                if (gameState === 'playing') {
+                    startBGM();
+                }
+            } else {
+                btn.textContent = '🔇';
+                btn.classList.add('muted');
+                stopBGM();
+            }
+        }
+        
+        // ============ 游戏初始化 ============
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 高清屏适配
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = 960 * dpr;
+        canvas.height = 540 * dpr;
+        canvas.style.width = '960px';
+        canvas.style.height = '540px';
+        ctx.scale(dpr, dpr);
+
+        // 游戏常量
+        const SCREEN_WIDTH = 960;
+        const SCREEN_HEIGHT = 540;
+        const MAP_WIDTH = 2000;
+
+        // 游戏状态
+        let gameState = 'start';
+        let currentLevel = 1;
+        let gameTime = 0;
+
+        // 动画帧
+        let animFrame = 0;
+
+        // ============ 主角数据 ============
+        const player = {
+            x: 100,
+            y: 400,
+            width: 44,
+            height: 56,
+            vx: 0,
+            vy: 0,
+            speed: 5,
+            jumpForce: -14,
+            health: 4,
+            maxHealth: 4,
+            coins: 0,
+            levelCoins: 0,
+            isJumping: false,
+            isCrouching: false,
+            wasCrouching: false,
+            isAttacking: false,
+            attackTimer: 0,
+            attackCooldown: 0,
+            invincible: false,
+            invincibleTimer: 0,
+            facingRight: true,
+            breathOffset: 0
+        };
+
+        // 物理参数
+        const GRAVITY = 0.6;
+        const FRICTION = 0.85;
+
+        // 相机
+        let cameraX = 0;
+
+        // 关卡数据
+        let bricks = [];
+        let coinBricks = [];
+        let hiddenBrick = null;
+        let coins = [];
+        let enemies = [];
+        let projectiles = [];
+        let particles = [];
+        let attackParticles = []; // 攻击特效粒子
+        let healthPack = null;
+        let door = null;
+        let doorOpen = false;
+
+        // 按键状态
+        const keys = {};
+
+        // ============ 关卡初始化 ============
+        function initLevel(level) {
+            bricks = [];
+            coinBricks = [];
+            coins = [];
+            enemies = [];
+            projectiles = [];
+            particles = [];
+            healthPack = null;
+            doorOpen = false;
+            player.levelCoins = 0;
+            player.x = 100;
+            player.y = 400;
+            player.vx = 0;
+            player.vy = 0;
+            player.isJumping = false;
+            player.isCrouching = false;
+            player.isAttacking = false;
+            player.attackTimer = 0;
+            player.attackCooldown = 0;
+            player.invincible = false;
+            player.invincibleTimer = 0;
+            cameraX = 0;
+
+            // 地面砖块 - 武侠风格石砖
+            for (let i = 0; i < MAP_WIDTH / 50; i++) {
+                bricks.push({
+                    x: i * 50,
+                    y: 480,
+                    width: 50,
+                    height: 60,
+                    type: 'ground'
+                });
+            }
+
+            // 平台砖块
+            const platforms = [
+                { x: 250, y: 380, count: 4 },
+                { x: 550, y: 320, count: 5 },
+                { x: 900, y: 380, count: 4 },
+                { x: 1250, y: 320, count: 5 },
+                { x: 1600, y: 380, count: 4 }
+            ];
+
+            platforms.forEach(p => {
+                for (let i = 0; i < p.count; i++) {
+                    bricks.push({
+                        x: p.x + i * 50,
+                        y: p.y,
+                        width: 50,
+                        height: 30,
+                        type: 'platform'
+                    });
+                }
+            });
+
+            // 金币砖块位置 - 增加数量和金币数
+            const coinBrickPositions = [
+                { x: 200, y: 240, coins: 6 },
+                { x: 350, y: 200, coins: 6 },
+                { x: 550, y: 260, coins: 6 },
+                { x: 750, y: 220, coins: 6 },
+                { x: 950, y: 240, coins: 6 },
+                { x: 1150, y: 200, coins: 6 },
+                { x: 1350, y: 260, coins: 6 },
+                { x: 1550, y: 220, coins: 6 },
+                { x: 1750, y: 240, coins: 6 }
+            ];
+
+            coinBrickPositions.forEach(pos => {
+                coinBricks.push({
+                    x: pos.x,
+                    y: pos.y,
+                    width: 50,
+                    height: 25,
+                    hit: false,
+                    coinCount: pos.coins
+                });
+            });
+
+            // 隐形砖块 - 增加到2个
+            hiddenBrick = {
+                x: 850,
+                y: 180,
+                width: 50,
+                height: 25,
+                hit: false,
+                coinCount: 15,
+                visible: true
+            };
+
+            // 第二个隐形砖块
+            coinBricks.push({
+                x: 1450,
+                y: 180,
+                width: 50,
+                height: 25,
+                hit: false,
+                coinCount: 15,
+                isHidden: true
+            });
+
+            // 城堡大门
+            door = { x: 1850, y: 380, width: 80, height: 100 };
+
+            // 根据关卡设置敌人
+            if (level === 1) {
+                // 第一关：飞镖机关（增加掉落金币功能）
+                const dartPositions = [350, 600, 850, 1100, 1400, 1650];
+                dartPositions.forEach(x => {
+                    enemies.push({
+                        type: 'dartLauncher',
+                        x: x,
+                        y: 420,
+                        width: 40,
+                        height: 40,
+                        timer: Math.random() * 90,
+                        health: 1  // 可被击毁
+                    });
+                });
+            } else if (level === 2) {
+                // 第二关：灵蛇 - 增加数量和金币掉落
+                const snakePositions = [300, 500, 700, 900, 1100, 1300, 1500, 1700];
+                snakePositions.forEach(x => {
+                    enemies.push({
+                        type: 'snake',
+                        x: x,
+                        y: 450,
+                        width: 50,
+                        height: 30,
+                        vx: 1.5,
+                        health: 1,
+                        attackCooldown: 0
+                    });
+                });
+                // 第二关血包
+                healthPack = {
+                    x: 900,
+                    y: 440,
+                    width: 32,
+                    height: 32,
+                    collected: false
+                };
+            } else if (level === 3) {
+                // 第三关：女巫 + 血包 - 降低难度
+                const witchPositions = [400, 700, 1000, 1300, 1600];
+                witchPositions.forEach(x => {
+                    enemies.push({
+                        type: 'witch',
+                        x: x,
+                        y: 380,
+                        width: 44,
+                        height: 60,
+                        vx: 0.3,
+                        health: 2,
+                        maxHealth: 2,
+                        attackTimer: 0,
+                        hitTimer: 0,
+                        moveDir: 1
+                    });
+                });
+                // 第三关血包
+                healthPack = {
+                    x: 900,
+                    y: 440,
+                    width: 32,
+                    height: 32,
+                    collected: false
+                };
+            }
+
+            updateUI();
+        }
+
+        // ============ UI更新 ============
+        function updateUI() {
+            document.getElementById('healthFill').style.width = (player.health / player.maxHealth * 100) + '%';
+            document.getElementById('coinCount').textContent = `${player.levelCoins} / 100`;
+            document.getElementById('levelInfo').textContent = `第 ${currentLevel} 关`;
+        }
+
+        // ============ 背景绘制 ============
+        function drawBackground() {
+            animFrame++;
+
+            if (currentLevel === 1) {
+                // 第一关：山林晨曦 - 虹猫蓝兔武侠风格
+                const skyGradient = ctx.createLinearGradient(0, 0, 0, SCREEN_HEIGHT);
+                skyGradient.addColorStop(0, '#ff9966');
+                skyGradient.addColorStop(0.3, '#ffcc99');
+                skyGradient.addColorStop(0.6, '#99ccff');
+                skyGradient.addColorStop(1, '#669966');
+                ctx.fillStyle = skyGradient;
+                ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+                // 太阳
+                const sunX = 750 - cameraX * 0.05;
+                const sunGradient = ctx.createRadialGradient(sunX, 80, 0, sunX, 80, 50);
+                sunGradient.addColorStop(0, '#ffffff');
+                sunGradient.addColorStop(0.3, '#ffee88');
+                sunGradient.addColorStop(1, 'rgba(255, 200, 100, 0)');
+                ctx.fillStyle = sunGradient;
+                ctx.beginPath();
+                ctx.arc(sunX, 80, 60, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 远山层叠
+                const mountainColors = ['#4a7c59', '#3d6b4f', '#2d5a3f'];
+                for (let layer = 0; layer < 3; layer++) {
+                    ctx.fillStyle = mountainColors[layer];
+                    ctx.beginPath();
+                    ctx.moveTo(0, 480);
+                    for (let i = 0; i <= SCREEN_WIDTH + 100; i += 50) {
+                        const x = i - (cameraX * (0.1 + layer * 0.05)) % 600;
+                        const h = 150 + Math.sin(i * 0.02 + layer) * 80 + layer * 40;
+                        ctx.lineTo(x, 480 - h);
+                    }
+                    ctx.lineTo(SCREEN_WIDTH, 480);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                // 云朵
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                for (let i = 0; i < 4; i++) {
+                    const cx = ((i * 300 - cameraX * 0.15) % (SCREEN_WIDTH + 200)) - 100;
+                    const cy = 60 + i * 25;
+                    drawCloud(cx, cy, 0.8 + i * 0.1);
+                }
+
+                // 竹林剪影
+                ctx.fillStyle = '#2d4a3e';
+                for (let i = 0; i < 15; i++) {
+                    const bx = (i * 150 - cameraX * 0.3) % (SCREEN_WIDTH + 300) - 100;
+                    drawBamboo(bx, 480, 80 + Math.sin(i) * 30);
+                }
+
+            } else if (currentLevel === 2) {
+                // 第二关：密林蛇窟 - 幽暗森林
+                const forestGradient = ctx.createLinearGradient(0, 0, 0, SCREEN_HEIGHT);
+                forestGradient.addColorStop(0, '#1a3320');
+                forestGradient.addColorStop(0.5, '#2d4a35');
+                forestGradient.addColorStop(1, '#1a2818');
+                ctx.fillStyle = forestGradient;
+                ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+                // 月光
+                const moonX = 200 - cameraX * 0.03;
+                ctx.fillStyle = '#e8e8d0';
+                ctx.beginPath();
+                ctx.arc(moonX, 70, 35, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(232, 232, 208, 0.1)';
+                ctx.beginPath();
+                ctx.arc(moonX, 70, 60, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 古树
+                for (let i = 0; i < 6; i++) {
+                    const tx = (i * 350 - cameraX * 0.2) % (SCREEN_WIDTH + 400) - 150;
+                    drawAncientTree(tx, 480, 0.8 + Math.sin(i) * 0.3);
+                }
+
+                // 藤蔓
+                ctx.strokeStyle = '#3d5a40';
+                ctx.lineWidth = 3;
+                for (let i = 0; i < 8; i++) {
+                    const vx = (i * 250 - cameraX * 0.25) % (SCREEN_WIDTH + 300) - 100;
+                    ctx.beginPath();
+                    ctx.moveTo(vx, 0);
+                    for (let y = 0; y < 300; y += 20) {
+                        ctx.lineTo(vx + Math.sin(y * 0.05 + animFrame * 0.02) * 15, y);
+                    }
+                    ctx.stroke();
+                }
+
+                // 萤火虫
+                ctx.fillStyle = '#aaff88';
+                for (let i = 0; i < 12; i++) {
+                    const fx = (i * 100 + Math.sin(animFrame * 0.05 + i) * 30) % SCREEN_WIDTH;
+                    const fy = 150 + Math.sin(animFrame * 0.03 + i * 2) * 100;
+                    ctx.globalAlpha = 0.6 + Math.sin(animFrame * 0.1 + i) * 0.4;
+                    ctx.beginPath();
+                    ctx.arc(fx, fy, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+            } else {
+                // 第三关：幽暗古堡
+                const castleGradient = ctx.createLinearGradient(0, 0, 0, SCREEN_HEIGHT);
+                castleGradient.addColorStop(0, '#0a0a15');
+                castleGradient.addColorStop(0.4, '#1a1a2e');
+                castleGradient.addColorStop(0.7, '#2a2a4e');
+                castleGradient.addColorStop(1, '#15152a');
+                ctx.fillStyle = castleGradient;
+                ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+                // 满月
+                const fullMoonX = 700 - cameraX * 0.02;
+                ctx.fillStyle = '#f5f5dc';
+                ctx.beginPath();
+                ctx.arc(fullMoonX, 80, 45, 0, Math.PI * 2);
+                ctx.fill();
+                // 月亮纹理
+                ctx.fillStyle = 'rgba(200, 200, 180, 0.3)';
+                ctx.beginPath();
+                ctx.arc(fullMoonX - 10, 70, 8, 0, Math.PI * 2);
+                ctx.arc(fullMoonX + 15, 85, 6, 0, Math.PI * 2);
+                ctx.arc(fullMoonX - 5, 95, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 星星
+                ctx.fillStyle = '#ffffff';
+                for (let i = 0; i < 30; i++) {
+                    const sx = (i * 73 + Math.sin(i) * 50) % SCREEN_WIDTH;
+                    const sy = (i * 37) % 200 + 20;
+                    const twinkle = Math.sin(animFrame * 0.1 + i * 0.5) * 0.5 + 0.5;
+                    ctx.globalAlpha = twinkle;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                // 远处古堡剪影
+                const castleX = 1600 - cameraX * 0.1;
+                drawCastle(castleX, 200, 0.5);
+
+                // 枯树
+                ctx.fillStyle = '#0a0a15';
+                for (let i = 0; i < 5; i++) {
+                    const dx = (i * 400 - cameraX * 0.15) % (SCREEN_WIDTH + 500) - 150;
+                    drawDeadTree(dx, 480, 0.7);
+                }
+
+                // 紫色雾气
+                ctx.fillStyle = 'rgba(100, 50, 150, 0.15)';
+                for (let i = 0; i < 5; i++) {
+                    const fogX = ((i * 300 - animFrame * 0.5) % (SCREEN_WIDTH + 400)) - 200;
+                    const fogY = 350 + Math.sin(animFrame * 0.02 + i) * 30;
+                    ctx.beginPath();
+                    ctx.ellipse(fogX, fogY, 200, 50, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // 绘制云朵
+        function drawCloud(x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.beginPath();
+            ctx.arc(0, 0, 25, 0, Math.PI * 2);
+            ctx.arc(30, -5, 20, 0, Math.PI * 2);
+            ctx.arc(-25, 5, 18, 0, Math.PI * 2);
+            ctx.arc(15, 10, 22, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 绘制竹子
+        function drawBamboo(x, groundY, height) {
+            ctx.save();
+            ctx.translate(x, groundY);
+            // 竹竿
+            ctx.fillStyle = '#3d5a40';
+            ctx.fillRect(-4, -height, 8, height);
+            // 竹节
+            for (let i = 0; i < height; i += 25) {
+                ctx.fillStyle = '#4a7050';
+                ctx.fillRect(-6, -i, 12, 4);
+            }
+            // 竹叶
+            ctx.fillStyle = '#5a8a60';
+            for (let i = 20; i < height; i += 40) {
+                ctx.beginPath();
+                ctx.ellipse(-15, -i, 15, 4, -0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(15, -i - 10, 15, 4, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // 绘制古树
+        function drawAncientTree(x, groundY, scale) {
+            ctx.save();
+            ctx.translate(x, groundY);
+            ctx.scale(scale, scale);
+            // 树干
+            ctx.fillStyle = '#2d3d28';
+            ctx.beginPath();
+            ctx.moveTo(-20, 0);
+            ctx.lineTo(-15, -150);
+            ctx.lineTo(15, -150);
+            ctx.lineTo(20, 0);
+            ctx.fill();
+            // 树根
+            ctx.beginPath();
+            ctx.moveTo(-30, 10);
+            ctx.quadraticCurveTo(-25, -20, -20, 0);
+            ctx.quadraticCurveTo(-15, -30, -10, 0);
+            ctx.fill();
+            // 树冠
+            ctx.fillStyle = '#1a3320';
+            ctx.beginPath();
+            ctx.arc(0, -180, 70, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-40, -150, 50, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(40, -160, 45, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // 绘制枯树
+        function drawDeadTree(x, groundY, scale) {
+            ctx.save();
+            ctx.translate(x, groundY);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#1a1a1a';
+            // 树干
+            ctx.beginPath();
+            ctx.moveTo(-15, 0);
+            ctx.lineTo(-8, -120);
+            ctx.lineTo(8, -120);
+            ctx.lineTo(15, 0);
+            ctx.fill();
+            // 枯枝
+            ctx.strokeStyle = '#1a1a1a';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(-5, -80);
+            ctx.lineTo(-40, -130);
+            ctx.moveTo(5, -90);
+            ctx.lineTo(35, -140);
+            ctx.moveTo(0, -100);
+            ctx.lineTo(-20, -150);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 绘制古堡
+        function drawCastle(x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#0a0a15';
+            // 主体
+            ctx.fillRect(-60, 0, 120, 180);
+            // 塔楼
+            ctx.fillRect(-80, -40, 40, 220);
+            ctx.fillRect(40, -40, 40, 220);
+            // 塔顶
+            ctx.beginPath();
+            ctx.moveTo(-80, -40);
+            ctx.lineTo(-60, -80);
+            ctx.lineTo(-40, -40);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(40, -40);
+            ctx.lineTo(60, -80);
+            ctx.lineTo(80, -40);
+            ctx.fill();
+            // 窗户
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(-50, 40, 20, 30);
+            ctx.fillRect(30, 40, 20, 30);
+            ctx.fillRect(-10, 100, 20, 40);
+            ctx.restore();
+        }
+
+        // ============ 砖块绘制 ============
+        function drawBricks() {
+            // 地面和平台
+            bricks.forEach(brick => {
+                const x = brick.x - cameraX;
+                if (x > -60 && x < SCREEN_WIDTH + 60) {
+                    if (brick.type === 'ground') {
+                        // 武侠风格石砖地面
+                        const groundGradient = ctx.createLinearGradient(x, brick.y, x, brick.y + brick.height);
+                        groundGradient.addColorStop(0, '#8b6914');
+                        groundGradient.addColorStop(0.1, '#a07d28');
+                        groundGradient.addColorStop(0.5, '#8b6914');
+                        groundGradient.addColorStop(1, '#5a4510');
+                        ctx.fillStyle = groundGradient;
+                        ctx.fillRect(x, brick.y, brick.width, brick.height);
+
+                        // 石砖纹理
+                        ctx.strokeStyle = '#5a4510';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, brick.y, brick.width, brick.height);
+
+                        // 砖缝
+                        ctx.strokeStyle = '#4a3508';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(x + brick.width / 2, brick.y);
+                        ctx.lineTo(x + brick.width / 2, brick.y + 10);
+                        ctx.stroke();
+
+                        // 苔藓装饰
+                        ctx.fillStyle = '#4a6a3a';
+                        for (let i = 0; i < 3; i++) {
+                            const mx = x + 5 + i * 15 + (brick.x % 30);
+                            ctx.beginPath();
+                            ctx.ellipse(mx, brick.y + 3, 6, 3, 0, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    } else {
+                        // 浮空平台 - 木质
+                        const platformGradient = ctx.createLinearGradient(x, brick.y, x, brick.y + brick.height);
+                        platformGradient.addColorStop(0, '#c49a3a');
+                        platformGradient.addColorStop(0.3, '#a07828');
+                        platformGradient.addColorStop(1, '#6a5018');
+                        ctx.fillStyle = platformGradient;
+                        ctx.fillRect(x, brick.y, brick.width, brick.height);
+
+                        // 木纹
+                        ctx.strokeStyle = '#5a4010';
+                        ctx.lineWidth = 1;
+                        for (let i = 0; i < brick.width; i += 12) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + i + 5, brick.y + 5);
+                            ctx.lineTo(x + i + 5, brick.y + brick.height - 3);
+                            ctx.stroke();
+                        }
+
+                        ctx.strokeStyle = '#4a3008';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, brick.y, brick.width, brick.height);
+                    }
+                }
+            });
+
+            // 金币砖块
+            coinBricks.forEach(brick => {
+                const x = brick.x - cameraX;
+                if (x > -60 && x < SCREEN_WIDTH + 60) {
+                    if (brick.hit) {
+                        // 被顶后变暗
+                        ctx.fillStyle = '#6a5a48';
+                        ctx.fillRect(x, brick.y, brick.width, brick.height);
+                        ctx.strokeStyle = '#4a3a28';
+                    } else {
+                        // 金色砖块
+                        const goldGradient = ctx.createLinearGradient(x, brick.y, x, brick.y + brick.height);
+                        goldGradient.addColorStop(0, '#ffd700');
+                        goldGradient.addColorStop(0.3, '#ffed4a');
+                        goldGradient.addColorStop(0.7, '#ffd700');
+                        goldGradient.addColorStop(1, '#cc9900');
+                        ctx.fillStyle = goldGradient;
+                        ctx.fillRect(x, brick.y, brick.width, brick.height);
+
+                        // 光泽
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                        ctx.fillRect(x + 3, brick.y + 2, brick.width - 20, 4);
+
+                        ctx.strokeStyle = '#aa8800';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, brick.y, brick.width, brick.height);
+
+                        // 问号
+                        ctx.fillStyle = '#aa6600';
+                        ctx.font = 'bold 16px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('?', x + brick.width / 2, brick.y + 18);
+                    }
+                    ctx.strokeRect(x, brick.y, brick.width, brick.height);
+                }
+            });
+
+            // 隐形砖块
+            if (hiddenBrick && hiddenBrick.visible) {
+                const x = hiddenBrick.x - cameraX;
+                if (x > -60 && x < SCREEN_WIDTH + 60) {
+                    if (hiddenBrick.hit) {
+                        ctx.fillStyle = '#6a5a48';
+                        ctx.fillRect(x, hiddenBrick.y, hiddenBrick.width, hiddenBrick.height);
+                    } else {
+                        // 伪装成普通砖块
+                        ctx.fillStyle = '#a07828';
+                        ctx.fillRect(x, hiddenBrick.y, hiddenBrick.width, hiddenBrick.height);
+                        ctx.strokeStyle = '#6a5018';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x, hiddenBrick.y, hiddenBrick.width, hiddenBrick.height);
+                    }
+                }
+            }
+
+            // 第二个隐形砖块绘制
+            coinBricks.forEach(brick => {
+                if (brick.isHidden) {
+                    const x = brick.x - cameraX;
+                    if (x > -60 && x < SCREEN_WIDTH + 60) {
+                        if (brick.hit) {
+                            ctx.fillStyle = '#6a5a48';
+                            ctx.fillRect(x, brick.y, brick.width, brick.height);
+                        } else {
+                            ctx.fillStyle = '#a07828';
+                            ctx.fillRect(x, brick.y, brick.width, brick.height);
+                            ctx.strokeStyle = '#6a5018';
+                            ctx.lineWidth = 2;
+                            ctx.strokeRect(x, brick.y, brick.width, brick.height);
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============ 金币绘制 ============
+        function drawCoins() {
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    const x = coin.x - cameraX;
+                    if (x > -20 && x < SCREEN_WIDTH + 20) {
+                        // 金币旋转效果
+                        const scaleX = Math.cos(animFrame * 0.15 + coin.x * 0.1);
+
+                        ctx.save();
+                        ctx.translate(x, coin.y);
+                        ctx.scale(scaleX, 1);
+
+                        // 金币阴影
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                        ctx.beginPath();
+                        ctx.ellipse(2, 3, 10, 10, 0, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // 金币主体
+                        const coinGradient = ctx.createRadialGradient(-3, -3, 0, 0, 0, 12);
+                        coinGradient.addColorStop(0, '#ffed4a');
+                        coinGradient.addColorStop(0.5, '#ffd700');
+                        coinGradient.addColorStop(1, '#cc8800');
+                        ctx.fillStyle = coinGradient;
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        // 金币内圈
+                        if (Math.abs(scaleX) > 0.3) {
+                            ctx.strokeStyle = '#aa6600';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.arc(0, 0, 6, 0, Math.PI * 2);
+                            ctx.stroke();
+
+                            // 金币符号
+                            ctx.fillStyle = '#aa6600';
+                            ctx.font = 'bold 10px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('$', 0, 0);
+                        }
+
+                        // 高光
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                        ctx.beginPath();
+                        ctx.ellipse(-3, -4, 4, 3, -0.5, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.restore();
+                    }
+                }
+            });
+        }
+
+        // ============ 主角绘制 - 英式贵族王子猪 ============
+        function drawPlayer() {
+            const x = player.x - cameraX;
+            const drawHeight = player.isCrouching ? player.height * 0.55 : player.height;
+            // 下蹲时，从底部向上绘制，保持脚底在同一位置
+            const drawY = player.y + player.height - drawHeight;
+
+            // 呼吸动画
+            player.breathOffset = Math.sin(animFrame * 0.08) * 1.5;
+            
+            // 跑步动画相位计算
+            const speedAbs = Math.abs(player.vx);
+            let runPhase = 0;
+            if (speedAbs > 0.2 && !player.isJumping && !player.isCrouching) {
+                runPhase = (animFrame * 0.15 * (speedAbs / 5)) % (Math.PI * 2);
+            }
+
+            // 闪烁效果（无敌状态）
+            if (player.invincible && Math.floor(player.invincibleTimer / 4) % 2 === 0) {
+                ctx.globalAlpha = 0.4;
+            }
+
+            ctx.save();
+
+            // 翻转处理
+            if (!player.facingRight) {
+                ctx.translate(x + player.width, 0);
+                ctx.scale(-1, 1);
+                ctx.translate(-x, 0);
+            }
+
+            const cx = x + player.width / 2;
+            const cy = drawY + drawHeight / 2;
+
+            // ===== 蓝色丝绒披风（在身体后面，边缘金色镶边）=====
+            const capeWave = player.isJumping ? Math.sin(animFrame * 0.3) * 8 : 0;
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, drawY + 5);
+            ctx.quadraticCurveTo(cx - 32, drawY + 25 + capeWave, cx - 28, drawY + drawHeight + 2);
+            ctx.lineTo(cx + 5, drawY + drawHeight);
+            ctx.quadraticCurveTo(cx + 22, drawY + 25 + capeWave, cx + 12, drawY + 5);
+            ctx.closePath();
+            ctx.fill();
+            // 披风金色镶边
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, drawY + 5);
+            ctx.quadraticCurveTo(cx - 32, drawY + 25 + capeWave, cx - 28, drawY + drawHeight + 2);
+            ctx.lineTo(cx + 5, drawY + drawHeight);
+            ctx.quadraticCurveTo(cx + 22, drawY + 25 + capeWave, cx + 12, drawY + 5);
+            ctx.closePath();
+            ctx.stroke();
+            // 披风内层
+            ctx.fillStyle = '#1e40af';
+            ctx.beginPath();
+            ctx.moveTo(cx - 7, drawY + 8);
+            ctx.quadraticCurveTo(cx - 22, drawY + 22 + capeWave, cx - 20, drawY + drawHeight - 2);
+            ctx.lineTo(cx + 3, drawY + drawHeight - 4);
+            ctx.quadraticCurveTo(cx + 15, drawY + 22 + capeWave, cx + 9, drawY + 8);
+            ctx.closePath();
+            ctx.fill();
+
+            // ===== 黑色亮面长筒皮靴（到膝盖，金色搭扣）=====
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, drawY + drawHeight - 20);
+            ctx.lineTo(cx - 10, drawY + drawHeight - 3);
+            ctx.lineTo(cx - 2, drawY + drawHeight - 3);
+            ctx.lineTo(cx - 3, drawY + drawHeight - 20);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, drawY + drawHeight - 20);
+            ctx.lineTo(cx + 2, drawY + drawHeight - 3);
+            ctx.lineTo(cx + 10, drawY + drawHeight - 3);
+            ctx.lineTo(cx + 8, drawY + drawHeight - 20);
+            ctx.closePath();
+            ctx.fill();
+            // 靴子金色搭扣
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(cx - 9, drawY + drawHeight - 16, 7, 3);
+            ctx.fillRect(cx + 2, drawY + drawHeight - 16, 7, 3);
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.arc(cx - 5.5, drawY + drawHeight - 14.5, 1.5, 0, Math.PI * 2);
+            ctx.arc(cx + 5.5, drawY + drawHeight - 14.5, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            // 靴子高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5.5, drawY + drawHeight - 10, 2, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5.5, drawY + drawHeight - 10, 2, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 白色修身长裤 =====
+            ctx.fillStyle = '#f5f5f5';
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, drawY + drawHeight - 35);
+            ctx.lineTo(cx - 8, drawY + drawHeight - 20);
+            ctx.lineTo(cx - 2, drawY + drawHeight - 20);
+            ctx.lineTo(cx - 3, drawY + drawHeight - 35);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, drawY + drawHeight - 35);
+            ctx.lineTo(cx + 2, drawY + drawHeight - 20);
+            ctx.lineTo(cx + 8, drawY + drawHeight - 20);
+            ctx.lineTo(cx + 6, drawY + drawHeight - 35);
+            ctx.closePath();
+            ctx.fill();
+
+            // ===== 身体（粉色猪身体）=====
+            const bodyGradient = ctx.createRadialGradient(cx - 3, cy - 8, 0, cx, cy - 5, 20);
+            bodyGradient.addColorStop(0, '#ffe8e8');
+            bodyGradient.addColorStop(0.5, '#ffb6c1');
+            bodyGradient.addColorStop(1, '#f5a0b0');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 5 + player.breathOffset * 0.5, 16, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 深蓝色燕尾服（英国王族风格）=====
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, drawY + 10);
+            ctx.quadraticCurveTo(cx - 18, drawY + 28, cx - 12, drawY + drawHeight - 35);
+            ctx.lineTo(cx + 12, drawY + drawHeight - 35);
+            ctx.quadraticCurveTo(cx + 18, drawY + 28, cx + 14, drawY + 10);
+            ctx.closePath();
+            ctx.fill();
+            // 燕尾服金色刺绣（华丽花纹）
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1.5;
+            // 肩部刺绣
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, drawY + 12);
+            ctx.lineTo(cx - 8, drawY + 20);
+            ctx.moveTo(cx + 12, drawY + 12);
+            ctx.lineTo(cx + 8, drawY + 20);
+            ctx.stroke();
+            // 袖口刺绣
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, drawY + drawHeight - 35);
+            ctx.lineTo(cx - 10, drawY + drawHeight - 40);
+            ctx.moveTo(cx + 10, drawY + drawHeight - 35);
+            ctx.lineTo(cx + 10, drawY + drawHeight - 40);
+            ctx.stroke();
+            // 胸前刺绣花纹
+            for (let i = 0; i < 3; i++) {
+                const y = drawY + 25 + i * 8;
+                ctx.beginPath();
+                ctx.arc(cx - 6, y, 2, 0, Math.PI * 2);
+                ctx.arc(cx + 6, y, 2, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // ===== 金色装饰腰带 =====
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(cx - 12, drawY + drawHeight - 38, 24, 4);
+            // 腰带装饰扣
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.arc(cx, drawY + drawHeight - 36, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#cc9900';
+            ctx.beginPath();
+            ctx.arc(cx, drawY + drawHeight - 36, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 红色丝绒马甲（英国王族风格）=====
+            ctx.fillStyle = '#8b0000';
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, drawY + 12);
+            ctx.quadraticCurveTo(cx - 12, drawY + 25, cx - 8, drawY + drawHeight - 40);
+            ctx.lineTo(cx + 8, drawY + drawHeight - 40);
+            ctx.quadraticCurveTo(cx + 12, drawY + 25, cx + 10, drawY + 12);
+            ctx.closePath();
+            ctx.fill();
+            // 马甲金色刺绣边缘
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, drawY + 12);
+            ctx.quadraticCurveTo(cx - 12, drawY + 25, cx - 8, drawY + drawHeight - 40);
+            ctx.lineTo(cx + 8, drawY + drawHeight - 40);
+            ctx.quadraticCurveTo(cx + 12, drawY + 25, cx + 10, drawY + 12);
+            ctx.closePath();
+            ctx.stroke();
+            // 马甲金色扣子（华丽设计）
+            ctx.fillStyle = '#ffd700';
+            for (let i = 0; i < 4; i++) {
+                const y = drawY + 20 + i * 7;
+                ctx.beginPath();
+                ctx.arc(cx, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffed4a';
+                ctx.beginPath();
+                ctx.arc(cx - 0.5, y - 0.5, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffd700';
+            }
+
+            // ===== 白色高领衬衫（英国王族风格）=====
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(cx - 7, drawY + 10);
+            ctx.lineTo(cx - 6, drawY + 18);
+            ctx.lineTo(cx + 6, drawY + 18);
+            ctx.lineTo(cx + 7, drawY + 10);
+            ctx.closePath();
+            ctx.fill();
+            // 衬衫领口装饰
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx - 5, drawY + 12);
+            ctx.lineTo(cx + 5, drawY + 12);
+            ctx.stroke();
+            // 衬衫袖口
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, drawY + drawHeight - 35);
+            ctx.lineTo(cx - 10, drawY + drawHeight - 30);
+            ctx.lineTo(cx - 6, drawY + drawHeight - 30);
+            ctx.lineTo(cx - 6, drawY + drawHeight - 35);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 10, drawY + drawHeight - 35);
+            ctx.lineTo(cx + 10, drawY + drawHeight - 30);
+            ctx.lineTo(cx + 6, drawY + drawHeight - 30);
+            ctx.lineTo(cx + 6, drawY + drawHeight - 35);
+            ctx.closePath();
+            ctx.fill();
+
+            // ===== 头部 =====
+            const headGradient = ctx.createRadialGradient(cx - 4, drawY - 8, 0, cx, drawY - 2, 14);
+            headGradient.addColorStop(0, '#ffe8e8');
+            headGradient.addColorStop(0.6, '#ffc0cb');
+            headGradient.addColorStop(1, '#f0a8b8');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, drawY - 2 + player.breathOffset * 0.3, 14, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 深棕色短发 =====
+            ctx.fillStyle = '#4a3728';
+            ctx.beginPath();
+            ctx.ellipse(cx, drawY - 10, 15, 8, 0, Math.PI, 0);
+            ctx.fill();
+            // 刘海
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, drawY - 8);
+            ctx.quadraticCurveTo(cx - 6, drawY - 4, cx, drawY - 8);
+            ctx.quadraticCurveTo(cx + 6, drawY - 4, cx + 12, drawY - 8);
+            ctx.lineTo(cx + 12, drawY - 12);
+            ctx.lineTo(cx - 12, drawY - 12);
+            ctx.closePath();
+            ctx.fill();
+            // 头发高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, drawY - 11, 3, 2, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 金色王子冠冕（镶嵌红色宝石）=====
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.moveTo(cx - 11, drawY - 16);
+            ctx.lineTo(cx - 8, drawY - 26);
+            ctx.lineTo(cx - 4, drawY - 20);
+            ctx.lineTo(cx, drawY - 28);
+            ctx.lineTo(cx + 4, drawY - 20);
+            ctx.lineTo(cx + 8, drawY - 26);
+            ctx.lineTo(cx + 11, drawY - 16);
+            ctx.closePath();
+            ctx.fill();
+            // 冠冕高光
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 9, drawY - 17);
+            ctx.lineTo(cx - 7, drawY - 23);
+            ctx.lineTo(cx - 3, drawY - 18);
+            ctx.lineTo(cx, drawY - 24);
+            ctx.lineTo(cx + 3, drawY - 18);
+            ctx.lineTo(cx + 7, drawY - 23);
+            ctx.lineTo(cx + 9, drawY - 17);
+            ctx.closePath();
+            ctx.fill();
+            // 红色宝石
+            ctx.fillStyle = '#cc0000';
+            ctx.beginPath();
+            ctx.arc(cx, drawY - 23, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff3333';
+            ctx.beginPath();
+            ctx.arc(cx - 0.5, drawY - 23.5, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 剑眉星目（虹猫风格）=====
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, drawY - 4, 4.5, 5.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5, drawY - 4, 4.5, 5.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // 眼珠
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(cx - 4, drawY - 3, 2.8, 0, Math.PI * 2);
+            ctx.arc(cx + 6, drawY - 3, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+            // 眼睛高光
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx - 3, drawY - 5, 1.3, 0, Math.PI * 2);
+            ctx.arc(cx + 7, drawY - 5, 1.3, 0, Math.PI * 2);
+            ctx.fill();
+            // 剑眉
+            ctx.strokeStyle = '#2a1a0a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 9, drawY - 10);
+            ctx.quadraticCurveTo(cx - 5, drawY - 12, cx - 1, drawY - 10);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + 1, drawY - 10);
+            ctx.quadraticCurveTo(cx + 5, drawY - 12, cx + 9, drawY - 10);
+            ctx.stroke();
+
+            // ===== 红色腮红 =====
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 10, drawY, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 10, drawY, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 猪鼻子 =====
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx, drawY + 2, 4.5, 3.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#cc5566';
+            ctx.beginPath();
+            ctx.ellipse(cx - 1.5, drawY + 2, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 1.5, drawY + 2, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 0.8, drawY + 0.8, 0.8, 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 微笑 =====
+            ctx.strokeStyle = '#cc5566';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(cx, drawY + 6, 3.5, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+
+            // ===== 耳朵 =====
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, drawY - 8, 4.5, 6.5, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, drawY - 8, 2.8, 4, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, drawY - 8, 4.5, 6.5, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, drawY - 8, 2.8, 4, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            // ===== 左手：亮银色长剑（剑柄金色）=====
+            let swordAngle = -0.3; // 默认角度
+            let swordRotation = 0; // 旋转角度
+            
+            if (player.isAttacking) {
+                // 酷炫攻击动画：大幅挥动 + 旋转
+                const attackProgress = player.attackTimer / 25; // 0到1的进度
+                if (attackProgress > 0.7) {
+                    // 攻击后半段：快速旋转收剑
+                    swordRotation = (1 - attackProgress) * Math.PI * 4;
+                    swordAngle = Math.sin(player.attackTimer * 1.5) * 1.2 - 0.3;
+                } else {
+                    // 攻击前半段：大幅挥动
+                    swordAngle = Math.sin(player.attackTimer * 0.8) * 1.5 - 0.3;
+                }
+            } else if (speedAbs > 0.2 && !player.isJumping && !player.isCrouching) {
+                // 跑步时前后摆动
+                swordAngle = -0.5 + Math.sin(runPhase) * 0.4;
+            }
+            
+            ctx.save();
+            ctx.translate(cx - 15, cy);
+            ctx.rotate(swordAngle);
+            ctx.rotate(swordRotation);
+
+            // 剑身 - 放大尺寸，减少光影
+            const swordGradient = ctx.createLinearGradient(0, -4, 0, 4);
+            swordGradient.addColorStop(0, '#f0f0f8');
+            swordGradient.addColorStop(0.5, '#d0d0e0');
+            swordGradient.addColorStop(1, '#a0a0c0');
+            ctx.fillStyle = swordGradient;
+            ctx.beginPath();
+            ctx.moveTo(-50, 0);
+            ctx.lineTo(-5, -3);
+            ctx.lineTo(-5, 3);
+            ctx.closePath();
+            ctx.fill();
+
+            // 剑身中线高光（简化）
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-45, 0);
+            ctx.lineTo(-10, 0);
+            ctx.stroke();
+
+            // 金色剑柄（放大）
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(-5, -4, 12, 8);
+            ctx.fillStyle = '#ffed4a';
+            ctx.fillRect(-3, -3, 8, 6);
+
+            // 金色护手（放大）
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.ellipse(5, 0, 8, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.ellipse(5, 0, 4, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 攻击时的剑光残影（简化）
+            if (player.isAttacking && player.attackTimer > 10) {
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 6;
+                ctx.beginPath();
+                ctx.moveTo(-45, -12);
+                ctx.lineTo(-35, 0);
+                ctx.lineTo(-45, 12);
+                ctx.stroke();
+
+                ctx.strokeStyle = 'rgba(200, 220, 255, 0.4)';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(-50, 0);
+                ctx.lineTo(-15, 0);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+
+            // ===== 右手：圆形盾牌（木纹底色，金属包边）=====
+            // 下蹲时盾牌举起
+            const shieldY = player.isCrouching ? drawY + 5 : drawY + drawHeight - 15;
+            const shieldScale = player.isCrouching ? 1.2 : 1;
+
+            ctx.save();
+            ctx.translate(cx + 18, shieldY);
+            ctx.scale(shieldScale, shieldScale);
+
+            // 盾牌阴影
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.beginPath();
+            ctx.arc(2, 2, 14, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 盾牌主体 - 木纹底色
+            const shieldGradient = ctx.createRadialGradient(-3, -3, 0, 0, 0, 14);
+            shieldGradient.addColorStop(0, '#d4a574');
+            shieldGradient.addColorStop(0.6, '#b8865a');
+            shieldGradient.addColorStop(1, '#8b5a2b');
+            ctx.fillStyle = shieldGradient;
+            ctx.beginPath();
+            ctx.arc(0, 0, 13, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 木纹纹理
+            ctx.strokeStyle = '#7a4a2b';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(0, 0, 8, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(-6, -8);
+            ctx.lineTo(6, 8);
+            ctx.moveTo(-6, 8);
+            ctx.lineTo(6, -8);
+            ctx.stroke();
+
+            // 金属包边
+            ctx.strokeStyle = '#c0a030';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, 13, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 金属铆钉
+            ctx.fillStyle = '#ffd700';
+            for (let i = 0; i < 6; i++) {
+                const angle = i * Math.PI / 3;
+                ctx.beginPath();
+                ctx.arc(Math.cos(angle) * 10, Math.sin(angle) * 10, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 盾牌中心金属装饰
+            ctx.fillStyle = '#c0a030';
+            ctx.beginPath();
+            ctx.arc(0, 0, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(0, 0, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+
+            ctx.restore();
+            ctx.globalAlpha = 1;
+        }
+
+        // ============ 王子猪绘制 ============
+        function drawPrincePig(x, y, scale = 1, kissOffset = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            const cx = 0;
+            const cy = 0;
+
+            // ===== 英式贵族王子猪 =====
+            
+            // 红色丝绒披风（边缘金色镶边）
+            ctx.fillStyle = '#8b0000';
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy - 8);
+            ctx.quadraticCurveTo(cx - 32, cy + 18, cx - 28, cy + 52);
+            ctx.lineTo(cx + 5, cy + 50);
+            ctx.quadraticCurveTo(cx + 22, cy + 18, cx + 12, cy - 8);
+            ctx.closePath();
+            ctx.fill();
+            // 披风金色镶边
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy - 8);
+            ctx.quadraticCurveTo(cx - 32, cy + 18, cx - 28, cy + 52);
+            ctx.lineTo(cx + 5, cy + 50);
+            ctx.quadraticCurveTo(cx + 22, cy + 18, cx + 12, cy - 8);
+            ctx.closePath();
+            ctx.stroke();
+            // 披风内层
+            ctx.fillStyle = '#a52a2a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 7, cy - 6);
+            ctx.quadraticCurveTo(cx - 22, cy + 15, cx - 20, cy + 44);
+            ctx.lineTo(cx + 3, cy + 42);
+            ctx.quadraticCurveTo(cx + 15, cy + 15, cx + 9, cy - 6);
+            ctx.closePath();
+            ctx.fill();
+
+            // 黑色亮面长筒皮靴（到膝盖，金色搭扣）
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy + 38);
+            ctx.lineTo(cx - 10, cy + 55);
+            ctx.lineTo(cx - 2, cy + 55);
+            ctx.lineTo(cx - 3, cy + 38);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, cy + 38);
+            ctx.lineTo(cx + 2, cy + 55);
+            ctx.lineTo(cx + 10, cy + 55);
+            ctx.lineTo(cx + 8, cy + 38);
+            ctx.closePath();
+            ctx.fill();
+            // 靴子金色搭扣
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(cx - 9, cy + 42, 7, 3);
+            ctx.fillRect(cx + 2, cy + 42, 7, 3);
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.arc(cx - 5.5, cy + 43.5, 1.5, 0, Math.PI * 2);
+            ctx.arc(cx + 5.5, cy + 43.5, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            // 靴子高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5.5, cy + 48, 2, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5.5, cy + 48, 2, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 白色修身长裤
+            ctx.fillStyle = '#f5f5f5';
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy + 25);
+            ctx.lineTo(cx - 8, cy + 40);
+            ctx.lineTo(cx - 2, cy + 40);
+            ctx.lineTo(cx - 3, cy + 25);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, cy + 25);
+            ctx.lineTo(cx + 2, cy + 40);
+            ctx.lineTo(cx + 8, cy + 40);
+            ctx.lineTo(cx + 6, cy + 25);
+            ctx.closePath();
+            ctx.fill();
+
+            // 身体（粉色猪身体）
+            const bodyGradient = ctx.createRadialGradient(cx - 3, cy - 3, 0, cx, cy, 20);
+            bodyGradient.addColorStop(0, '#ffe8e8');
+            bodyGradient.addColorStop(0.5, '#ffb6c1');
+            bodyGradient.addColorStop(1, '#f5a0b0');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + 5, 16, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 深蓝色燕尾服
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 5);
+            ctx.quadraticCurveTo(cx - 15, cy + 8, cx - 10, cy + 28);
+            ctx.lineTo(cx + 10, cy + 28);
+            ctx.quadraticCurveTo(cx + 15, cy + 8, cx + 12, cy - 5);
+            ctx.closePath();
+            ctx.fill();
+            // 燕尾服金色刺绣
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy - 2);
+            ctx.lineTo(cx - 8, cy + 25);
+            ctx.moveTo(cx + 8, cy - 2);
+            ctx.lineTo(cx + 8, cy + 25);
+            ctx.stroke();
+            // 领口金色刺绣
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy - 3);
+            ctx.lineTo(cx + 6, cy - 3);
+            ctx.stroke();
+
+            // 红色丝绒马甲
+            ctx.fillStyle = '#8b0000';
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy - 3);
+            ctx.quadraticCurveTo(cx - 10, cy + 5, cx - 7, cy + 22);
+            ctx.lineTo(cx + 7, cy + 22);
+            ctx.quadraticCurveTo(cx + 10, cy + 5, cx + 8, cy - 3);
+            ctx.closePath();
+            ctx.fill();
+            // 马甲金色扣子
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(cx, cy + 5, 2.5, 0, Math.PI * 2);
+            ctx.arc(cx, cy + 12, 2.5, 0, Math.PI * 2);
+            ctx.arc(cx, cy + 19, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 白色高领衬衫
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(cx - 5, cy - 3);
+            ctx.lineTo(cx - 4, cy + 3);
+            ctx.lineTo(cx + 4, cy + 3);
+            ctx.lineTo(cx + 5, cy - 3);
+            ctx.closePath();
+            ctx.fill();
+
+            // 头部
+            const headGradient = ctx.createRadialGradient(cx - 4, cy - 18, 0, cx, cy - 12, 14);
+            headGradient.addColorStop(0, '#ffe8e8');
+            headGradient.addColorStop(0.6, '#ffc0cb');
+            headGradient.addColorStop(1, '#f0a8b8');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 12, 14, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 深棕色短发
+            ctx.fillStyle = '#4a3728';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 20, 15, 8, 0, Math.PI, 0);
+            ctx.fill();
+            // 刘海
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 18);
+            ctx.quadraticCurveTo(cx - 6, cy - 14, cx, cy - 18);
+            ctx.quadraticCurveTo(cx + 6, cy - 14, cx + 12, cy - 18);
+            ctx.lineTo(cx + 12, cy - 22);
+            ctx.lineTo(cx - 12, cy - 22);
+            ctx.closePath();
+            ctx.fill();
+            // 头发高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, cy - 21, 3, 2, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 金色王子冠冕（镶嵌红色宝石）
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.moveTo(cx - 11, cy - 26);
+            ctx.lineTo(cx - 8, cy - 36);
+            ctx.lineTo(cx - 4, cy - 30);
+            ctx.lineTo(cx, cy - 38);
+            ctx.lineTo(cx + 4, cy - 30);
+            ctx.lineTo(cx + 8, cy - 36);
+            ctx.lineTo(cx + 11, cy - 26);
+            ctx.closePath();
+            ctx.fill();
+            // 冠冕高光
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 9, cy - 27);
+            ctx.lineTo(cx - 7, cy - 33);
+            ctx.lineTo(cx - 3, cy - 28);
+            ctx.lineTo(cx, cy - 34);
+            ctx.lineTo(cx + 3, cy - 28);
+            ctx.lineTo(cx + 7, cy - 33);
+            ctx.lineTo(cx + 9, cy - 27);
+            ctx.closePath();
+            ctx.fill();
+            // 红色宝石
+            ctx.fillStyle = '#cc0000';
+            ctx.beginPath();
+            ctx.arc(cx, cy - 33, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff3333';
+            ctx.beginPath();
+            ctx.arc(cx - 0.5, cy - 33.5, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 剑眉星目（虹猫风格）
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, cy - 14, 4.5, 5.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5, cy - 14, 4.5, 5.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // 眼珠
+            ctx.fillStyle = '#1a1a1a';
+            ctx.beginPath();
+            ctx.arc(cx - 4, cy - 13, 2.8, 0, Math.PI * 2);
+            ctx.arc(cx + 6, cy - 13, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+            // 眼睛高光
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx - 3, cy - 15, 1.3, 0, Math.PI * 2);
+            ctx.arc(cx + 7, cy - 15, 1.3, 0, Math.PI * 2);
+            ctx.fill();
+            // 剑眉
+            ctx.strokeStyle = '#2a1a0a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 9, cy - 20);
+            ctx.quadraticCurveTo(cx - 5, cy - 22, cx - 1, cy - 20);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + 1, cy - 20);
+            ctx.quadraticCurveTo(cx + 5, cy - 22, cx + 9, cy - 20);
+            ctx.stroke();
+
+            // 红色腮红
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 10, cy - 10, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 10, cy - 10, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 猪鼻子
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 8, 4.5, 3.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#cc5566';
+            ctx.beginPath();
+            ctx.ellipse(cx - 1.5, cy - 8, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 1.5, cy - 8, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 0.8, cy - 9.2, 0.8, 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 微笑
+            ctx.strokeStyle = '#cc5566';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(cx, cy - 4, 3.5, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+
+            // 耳朵
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, cy - 18, 4.5, 6.5, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, cy - 18, 2.8, 4, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, cy - 18, 4.5, 6.5, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, cy - 18, 2.8, 4, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // ============ 美美猪绘制 ============
+        function drawPrincessPig(x, y, scale = 1, kissOffset = 0) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            const cx = 0;
+            const cy = 0;
+
+            // 蓬蓬粉色婚纱
+            const dressGradient = ctx.createRadialGradient(cx, cy + 20, 0, cx, cy + 30, 50);
+            dressGradient.addColorStop(0, '#ffb6c1');
+            dressGradient.addColorStop(0.5, '#ff69b4');
+            dressGradient.addColorStop(1, '#ff1493');
+            ctx.fillStyle = dressGradient;
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 5);
+            ctx.quadraticCurveTo(cx - 45, cy + 10, cx - 50, cy + 55);
+            ctx.quadraticCurveTo(cx - 30, cy + 60, cx, cy + 58);
+            ctx.quadraticCurveTo(cx + 30, cy + 60, cx + 50, cy + 55);
+            ctx.quadraticCurveTo(cx + 45, cy + 10, cx + 12, cy - 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // 婚纱泡泡效果
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 8; i++) {
+                const angle = i * Math.PI / 4;
+                const bx = cx + Math.cos(angle) * 35;
+                const by = cy + 30 + Math.sin(angle) * 20;
+                ctx.beginPath();
+                ctx.arc(bx, by, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 身体
+            const bodyGradient = ctx.createRadialGradient(cx - 3, cy - 8, 0, cx, cy - 5, 18);
+            bodyGradient.addColorStop(0, '#ffe0e0');
+            bodyGradient.addColorStop(0.5, '#ffb6c1');
+            bodyGradient.addColorStop(1, '#f5a0b0');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 5, 14, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 微卷长发
+            ctx.fillStyle = '#8b4513';
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, cy - 20);
+            ctx.quadraticCurveTo(cx - 35, cy - 10, cx - 32, cy + 35);
+            ctx.quadraticCurveTo(cx - 20, cy + 40, cx - 10, cy + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 14, cy - 20);
+            ctx.quadraticCurveTo(cx + 35, cy - 10, cx + 32, cy + 35);
+            ctx.quadraticCurveTo(cx + 20, cy + 40, cx + 10, cy + 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // 头发卷曲效果
+            ctx.strokeStyle = '#6b3510';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const hy = cy - 15 + i * 8;
+                ctx.beginPath();
+                ctx.arc(cx - 28, hy, 5, 0.5, Math.PI - 0.5);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx + 28, hy, 5, -0.5, Math.PI + 0.5);
+                ctx.stroke();
+            }
+
+            // 头部
+            const headGradient = ctx.createRadialGradient(cx - 5, cy - 25, 0, cx, cy - 22, 18);
+            headGradient.addColorStop(0, '#ffe0e0');
+            headGradient.addColorStop(0.6, '#ffb6c1');
+            headGradient.addColorStop(1, '#f0a0b0');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 22, 15, 13, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 皇冠
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 32);
+            ctx.lineTo(cx - 8, cy - 40);
+            ctx.lineTo(cx - 4, cy - 34);
+            ctx.lineTo(cx, cy - 42);
+            ctx.lineTo(cx + 4, cy - 34);
+            ctx.lineTo(cx + 8, cy - 40);
+            ctx.lineTo(cx + 12, cy - 32);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#ff69b4';
+            ctx.beginPath();
+            ctx.arc(cx, cy - 37, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 眼睛
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, cy - 22, 4, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5, cy - 22, 4, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2a1a0a';
+            ctx.beginPath();
+            ctx.arc(cx - 4, cy - 21, 2.5, 0, Math.PI * 2);
+            ctx.arc(cx + 6, cy - 21, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx - 3, cy - 23, 1, 0, Math.PI * 2);
+            ctx.arc(cx + 7, cy - 23, 1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 腮红
+            ctx.fillStyle = 'rgba(255, 150, 150, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 11, cy - 18, 3, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 11, cy - 18, 3, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 猪鼻子
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 16, 4, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#e87a8a';
+            ctx.beginPath();
+            ctx.ellipse(cx - 1.5, cy - 16, 1.2, 1.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 1.5, cy - 16, 1.2, 1.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 微笑
+            ctx.strokeStyle = '#d07080';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(cx, cy - 14, 3, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+
+            // 耳朵
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx - 13, cy - 28, 4, 6, -0.3, 0, Math.PI * 2);
+            ctx.ellipse(cx + 13, cy - 28, 4, 6, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // ============ 敌人绘制 ============
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                if (enemy.dead) return;
+                const x = enemy.x - cameraX;
+                if (x < -100 || x > SCREEN_WIDTH + 100) return;
+
+                if (enemy.type === 'dartLauncher') {
+                    // 飞镖发射器 - 机关盒
+                    ctx.fillStyle = '#4a4a4a';
+                    ctx.fillRect(x, enemy.y, enemy.width, enemy.height);
+
+                    // 装饰纹路
+                    ctx.strokeStyle = '#3a3a3a';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x + 5, enemy.y + 5, enemy.width - 10, enemy.height - 10);
+
+                    // 发射口（朝左）
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.fillRect(x - 8, enemy.y + 10, 8, 20);
+
+                    // 发射提示光（朝左）
+                    if (enemy.timer > 100) {
+                        ctx.fillStyle = `rgba(255, 50, 50, ${(enemy.timer - 100) / 20})`;
+                        ctx.beginPath();
+                        ctx.arc(x - 5, enemy.y + enemy.height / 2, 5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                } else if (enemy.type === 'snake') {
+                    // 灵蛇 - 武侠风格毒蛇
+                    ctx.save();
+                    ctx.translate(x, enemy.y);
+
+                    // 蛇身波纹
+                    ctx.strokeStyle = '#2d8a4a';
+                    ctx.lineWidth = 8;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 15);
+                    for (let i = 0; i < enemy.width; i += 5) {
+                        const waveY = 15 + Math.sin((animFrame * 0.2 + i * 0.15) + enemy.x * 0.01) * 6;
+                        ctx.lineTo(i, waveY);
+                    }
+                    ctx.stroke();
+
+                    // 蛇身花纹
+                    ctx.strokeStyle = '#1a5a2a';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(5, 15);
+                    for (let i = 5; i < enemy.width; i += 8) {
+                        const waveY = 15 + Math.sin((animFrame * 0.2 + i * 0.15) + enemy.x * 0.01) * 6;
+                        ctx.lineTo(i, waveY);
+                    }
+                    ctx.stroke();
+
+                    // 蛇头
+                    const headX = enemy.width;
+                    const headY = 15 + Math.sin(animFrame * 0.2 + enemy.x * 0.01) * 6;
+
+                    ctx.fillStyle = '#3daa5a';
+                    ctx.beginPath();
+                    ctx.ellipse(headX + 8, headY, 10, 7, 0, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 蛇眼
+                    ctx.fillStyle = '#ff3333';
+                    ctx.beginPath();
+                    ctx.arc(headX + 12, headY - 2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#000000';
+                    ctx.beginPath();
+                    ctx.arc(headX + 13, headY - 2, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 蛇信子
+                    ctx.strokeStyle = '#cc3366';
+                    ctx.lineWidth = 1.5;
+                    const tongueWave = Math.sin(animFrame * 0.3) * 3;
+                    ctx.beginPath();
+                    ctx.moveTo(headX + 15, headY);
+                    ctx.lineTo(headX + 22 + tongueWave, headY - 3);
+                    ctx.moveTo(headX + 15, headY);
+                    ctx.lineTo(headX + 22 - tongueWave, headY + 3);
+                    ctx.stroke();
+
+                    ctx.restore();
+
+                } else if (enemy.type === 'witch') {
+                    // 紫衣女巫
+                    if (enemy.hitTimer > 0 && Math.floor(enemy.hitTimer / 3) % 2 === 0) {
+                        ctx.globalAlpha = 0.5;
+                    }
+
+                    // 被击中时的红色闪光
+                    if (enemy.hitTimer > 0 && enemy.hitTimer < 10) {
+                        ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+                        ctx.beginPath();
+                        ctx.arc(enemy.width / 2, 20, 20, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    ctx.save();
+                    ctx.translate(x, enemy.y);
+
+                    // 飞行动画
+                    const floatY = Math.sin(animFrame * 0.1 + enemy.x * 0.01) * 5;
+                    ctx.translate(0, floatY);
+
+                    // 长袍
+                    const robeGradient = ctx.createLinearGradient(0, 0, 0, enemy.height);
+                    robeGradient.addColorStop(0, '#6a2a8a');
+                    robeGradient.addColorStop(1, '#3a1050');
+                    ctx.fillStyle = robeGradient;
+                    ctx.beginPath();
+                    ctx.moveTo(0, enemy.height);
+                    ctx.quadraticCurveTo(enemy.width / 2, enemy.height * 0.4, enemy.width / 2, 20);
+                    ctx.quadraticCurveTo(enemy.width / 2, enemy.height * 0.4, enemy.width, enemy.height);
+                    ctx.fill();
+
+                    // 身体
+                    ctx.fillStyle = '#dda0dd';
+                    ctx.beginPath();
+                    ctx.arc(enemy.width / 2, 18, 12, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 女巫帽
+                    ctx.fillStyle = '#4a0a6a';
+                    ctx.beginPath();
+                    ctx.moveTo(enemy.width / 2, -20);
+                    ctx.lineTo(enemy.width / 2 - 18, 22);
+                    ctx.lineTo(enemy.width / 2 + 18, 22);
+                    ctx.fill();
+
+                    // 帽带
+                    ctx.fillStyle = '#8a4aaa';
+                    ctx.fillRect(enemy.width / 2 - 18, 12, 36, 5);
+
+                    // 眼睛
+                    ctx.fillStyle = '#aa00aa';
+                    ctx.beginPath();
+                    ctx.arc(enemy.width / 2 - 5, 16, 3, 0, Math.PI * 2);
+                    ctx.arc(enemy.width / 2 + 5, 16, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ff00ff';
+                    ctx.beginPath();
+                    ctx.arc(enemy.width / 2 - 5, 16, 1.5, 0, Math.PI * 2);
+                    ctx.arc(enemy.width / 2 + 5, 16, 1.5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 扫帚
+                    ctx.fillStyle = '#6a4020';
+                    ctx.fillRect(-15, enemy.height - 15, enemy.width + 30, 5);
+
+                    // 扫帚毛
+                    ctx.fillStyle = '#8a6030';
+                    for (let i = 0; i < 8; i++) {
+                        ctx.fillRect(-12 + i * 4, enemy.height - 10, 3, 12);
+                    }
+
+                    ctx.restore();
+                    ctx.globalAlpha = 1;
+                }
+            });
+
+            // 绘制投射物
+            projectiles.forEach(proj => {
+                const x = proj.x - cameraX;
+                if (x < -50 || x > SCREEN_WIDTH + 50) return;
+
+                if (proj.type === 'dart') {
+                    // 飞镖
+                    ctx.save();
+                    ctx.translate(x, proj.y);
+                    
+                    // 根据飞行方向翻转飞镖
+                    if (proj.vx < 0) {
+                        ctx.scale(-1, 1);
+                    }
+
+                    // 飞镖阴影
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 4);
+                    ctx.lineTo(20, 8);
+                    ctx.lineTo(0, 12);
+                    ctx.lineTo(5, 8);
+                    ctx.fill();
+
+                    // 飞镖主体
+                    ctx.fillStyle = '#cc3333';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(18, 5);
+                    ctx.lineTo(0, 10);
+                    ctx.lineTo(4, 5);
+                    ctx.fill();
+
+                    // 飞镖边缘
+                    ctx.fillStyle = '#ff5555';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(15, 5);
+                    ctx.lineTo(4, 5);
+                    ctx.fill();
+
+                    ctx.restore();
+
+                } else if (proj.type === 'poison') {
+                    // 毒气云
+                    ctx.save();
+                    ctx.translate(x, proj.y);
+
+                    // 多层毒气
+                    for (let i = 0; i < 3; i++) {
+                        const size = 25 + i * 10;
+                        const alpha = 0.5 - i * 0.15;
+                        const offset = Math.sin(animFrame * 0.1 + i) * 5;
+
+                        ctx.fillStyle = `rgba(150, 50, 200, ${alpha})`;
+                        ctx.beginPath();
+                        ctx.arc(offset, offset * 0.5, size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // 毒气核心
+                    ctx.fillStyle = 'rgba(200, 100, 255, 0.8)';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // 骷髅标志
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.beginPath();
+                    ctx.arc(0, -2, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillRect(-4, 3, 8, 4);
+
+                    ctx.restore();
+                }
+            });
+        }
+
+        // ============ 血包绘制 ============
+        function drawHealthPack() {
+            if (!healthPack || healthPack.collected) return;
+            const x = healthPack.x - cameraX;
+            if (x < -40 || x > SCREEN_WIDTH + 40) return;
+
+            ctx.save();
+            ctx.translate(x + healthPack.width / 2, healthPack.y + healthPack.height / 2);
+
+            // 漂浮动画
+            const floatY = Math.sin(animFrame * 0.08) * 5;
+            ctx.translate(0, floatY);
+
+            // 光晕效果
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.3)';
+            ctx.beginPath();
+            ctx.arc(0, 0, 25, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 血包主体
+            const packGradient = ctx.createRadialGradient(-3, -3, 0, 0, 0, 18);
+            packGradient.addColorStop(0, '#ff6666');
+            packGradient.addColorStop(0.7, '#cc0000');
+            packGradient.addColorStop(1, '#880000');
+            ctx.fillStyle = packGradient;
+            ctx.beginPath();
+            ctx.roundRect(-16, -16, 32, 32, 8);
+            ctx.fill();
+
+            // 白色十字
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-3, -10, 6, 20);
+            ctx.fillRect(-10, -3, 20, 6);
+
+            // 高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(-5, -8, 6, 4, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // ============ 粒子绘制 ============
+        function drawParticles() {
+            // 普通粒子
+            particles.forEach(p => {
+                const x = p.x - cameraX;
+                if (x < -50 || x > SCREEN_WIDTH + 50) return;
+
+                ctx.save();
+                ctx.globalAlpha = p.life / 30;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(x, p.y, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+            
+            // 攻击特效粒子
+            attackParticles.forEach(p => {
+                const x = p.x - cameraX;
+                if (x < -50 || x > SCREEN_WIDTH + 50) return;
+
+                ctx.save();
+                ctx.globalAlpha = p.life / 20;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 剑光特效：粒子周围的光晕
+                if (p.life > 15) {
+                    ctx.globalAlpha = (p.life - 15) / 10;
+                    ctx.fillStyle = '#ffeb3b';
+                    ctx.beginPath();
+                    ctx.arc(x, p.y, p.size * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            });
+        }
+
+        // ============ 大门绘制 ============
+        function drawDoor() {
+            const x = door.x - cameraX;
+            if (x < -150 || x > SCREEN_WIDTH + 150) return;
+
+            // 城堡主体
+            const castleGradient = ctx.createLinearGradient(x - 40, 0, x + door.width + 40, 0);
+            castleGradient.addColorStop(0, '#4a4a5a');
+            castleGradient.addColorStop(0.5, '#6a6a7a');
+            castleGradient.addColorStop(1, '#4a4a5a');
+            ctx.fillStyle = castleGradient;
+            ctx.fillRect(x - 40, door.y - 80, door.width + 80, door.height + 80);
+
+            // 城墙砖纹
+            ctx.strokeStyle = '#3a3a4a';
+            ctx.lineWidth = 1;
+            for (let by = door.y - 80; by < door.y + door.height; by += 20) {
+                for (let bx = x - 40; bx < x + door.width + 40; bx += 30) {
+                    ctx.strokeRect(bx, by, 30, 20);
+                }
+            }
+
+            // 塔楼
+            ctx.fillStyle = '#5a5a6a';
+            ctx.fillRect(x - 50, door.y - 120, 40, door.height + 120);
+            ctx.fillRect(x + door.width + 10, door.y - 120, 40, door.height + 120);
+
+            // 塔顶尖顶
+            ctx.fillStyle = '#3a4a5a';
+            ctx.beginPath();
+            ctx.moveTo(x - 50, door.y - 120);
+            ctx.lineTo(x - 30, door.y - 160);
+            ctx.lineTo(x - 10, door.y - 120);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(x + door.width + 10, door.y - 120);
+            ctx.lineTo(x + door.width + 30, door.y - 160);
+            ctx.lineTo(x + door.width + 50, door.y - 120);
+            ctx.fill();
+
+            // 旗帜
+            ctx.fillStyle = '#cc2222';
+            const flagWave = Math.sin(animFrame * 0.1) * 5;
+            ctx.beginPath();
+            ctx.moveTo(x - 30, door.y - 160);
+            ctx.lineTo(x - 30 + 20 + flagWave, door.y - 150);
+            ctx.lineTo(x - 30, door.y - 140);
+            ctx.fill();
+
+            // 大门
+            if (doorOpen) {
+                // 开启状态 - 木门
+                const doorGradient = ctx.createLinearGradient(x, 0, x + door.width, 0);
+                doorGradient.addColorStop(0, '#6a4a2a');
+                doorGradient.addColorStop(0.5, '#8a6a4a');
+                doorGradient.addColorStop(1, '#6a4a2a');
+                ctx.fillStyle = doorGradient;
+                ctx.fillRect(x, door.y, door.width, door.height);
+
+                // 门框
+                ctx.strokeStyle = '#5a3a1a';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(x, door.y, door.width, door.height);
+
+                // 进入提示
+                ctx.fillStyle = '#44ff44';
+                ctx.font = 'bold 16px Microsoft YaHei';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 10;
+                ctx.fillText('进入!', x + door.width / 2, door.y + door.height / 2);
+                ctx.shadowBlur = 0;
+            } else {
+                // 关闭状态
+                ctx.fillStyle = '#3a3a4a';
+                ctx.fillRect(x, door.y, door.width, door.height);
+
+                // 门锁
+                ctx.fillStyle = '#2a2a3a';
+                ctx.fillRect(x + door.width / 2 - 15, door.y + door.height / 2 - 20, 30, 40);
+
+                // 锁孔
+                ctx.fillStyle = '#1a1a2a';
+                ctx.beginPath();
+                ctx.arc(x + door.width / 2, door.y + door.height / 2 - 8, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillRect(x + door.width / 2 - 3, door.y + door.height / 2 - 5, 6, 15);
+
+                // 金币提示
+                if (player.levelCoins >= 100) {
+                    ctx.fillStyle = '#ffff00';
+                    ctx.font = 'bold 14px Microsoft YaHei';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('已解锁!', x + door.width / 2, door.y - 10);
+                } else {
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.font = '12px Microsoft YaHei';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`需要 ${100 - player.levelCoins} 金币`, x + door.width / 2, door.y - 10);
+                }
+            }
+        }
+
+        // ============ 碰撞检测 ============
+        function checkCollision(a, b) {
+            return a.x < b.x + b.width &&
+                   a.x + a.width > b.x &&
+                   a.y < b.y + b.height &&
+                   a.y + a.height > b.y;
+        }
+
+        // ============ 游戏更新 ============
+        function update() {
+            if (gameState !== 'playing') return;
+            gameTime++;
+
+            // 玩家移动
+            if (keys['ArrowLeft']) {
+                player.vx = -player.speed;
+                player.facingRight = false;
+            } else if (keys['ArrowRight']) {
+                player.vx = player.speed;
+                player.facingRight = true;
+            } else {
+                player.vx *= FRICTION;
+            }
+
+            // 跳跃
+            if (keys['ArrowUp'] && !player.isJumping) {
+                player.vy = player.jumpForce;
+                player.isJumping = true;
+                playSound('jump');
+            }
+
+            // 下蹲
+            player.isCrouching = keys['ArrowDown'];
+
+            // 攻击（下蹲时无法攻击，只能防御）
+            if (keys[' '] && !player.isAttacking && player.attackCooldown <= 0 && !player.isCrouching) {
+                player.isAttacking = true;
+                playSound('attack');
+                player.attackTimer = 25;
+                player.attackCooldown = 30;
+
+                // 攻击判定
+                const attackBox = {
+                    x: player.facingRight ? player.x + player.width : player.x - 35,
+                    y: player.y + player.height * 0.25,
+                    width: 35,
+                    height: player.height * 0.5
+                };
+
+                enemies.forEach(enemy => {
+                    if (enemy.dead) return;
+
+                    // 所有敌人都可被攻击
+                    const enemyBox = { x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height };
+                    if (checkCollision(attackBox, enemyBox)) {
+                        // 攻击命中特效
+                        for (let i = 0; i < 8; i++) {
+                            attackParticles.push({
+                                x: enemy.x + enemy.width / 2,
+                                y: enemy.y + enemy.height / 2,
+                                vx: (Math.random() - 0.5) * 8,
+                                vy: (Math.random() - 0.5) * 8,
+                                life: 20,
+                                color: '#ff6b6b',
+                                size: Math.random() * 3 + 1
+                            });
+                        }
+                        
+                        if (enemy.type === 'dartLauncher') {
+                            // 飞镖发射器可被击毁
+                            enemy.health--;
+                            if (enemy.health <= 0) {
+                                const dropCount = 5 + Math.floor(Math.random() * 3);
+                                for (let i = 0; i < dropCount; i++) {
+                                    coins.push({
+                                        x: enemy.x + Math.random() * enemy.width,
+                                        y: enemy.y,
+                                        vy: -5 - Math.random() * 3,
+                                        vx: (Math.random() - 0.5) * 5,
+                                        collected: false
+                                    });
+                                }
+                                playSound('dartDeath');
+                                enemy.dead = true;
+                            }
+                        } else if (enemy.type === 'snake') {
+                            enemy.health--;
+                            if (enemy.health <= 0) {
+                                // 蛇掉落6-8金币
+                                const dropCount = 6 + Math.floor(Math.random() * 3);
+                                for (let i = 0; i < dropCount; i++) {
+                                    coins.push({
+                                        x: enemy.x + Math.random() * enemy.width,
+                                        y: enemy.y,
+                                        vy: -5 - Math.random() * 3,
+                                        vx: (Math.random() - 0.5) * 4,
+                                        collected: false
+                                    });
+                                }
+                                playSound('snakeDeath');
+                                enemy.dead = true;
+                            }
+                        } else if (enemy.type === 'witch') {
+                            enemy.health--;
+                            enemy.hitTimer = 30;
+                            // 女巫后退
+                            enemy.x += player.facingRight ? -20 : 20;
+                            if (enemy.health <= 0) {
+                                // 女巫死亡特效
+                                for (let i = 0; i < 15; i++) {
+                                    particles.push({
+                                        x: enemy.x + enemy.width / 2,
+                                        y: enemy.y + enemy.height / 2,
+                                        vx: (Math.random() - 0.5) * 6,
+                                        vy: (Math.random() - 0.5) * 6,
+                                        life: 30,
+                                        color: '#9900cc'
+                                    });
+                                }
+                                // 清除该女巫的所有毒气
+                                projectiles.forEach(proj => {
+                                    if (proj.type === 'poison' && proj.witchId === enemies.indexOf(enemy)) {
+                                        proj.dead = true;
+                                    }
+                                });
+                                // 女巫掉落10金币
+                                for (let i = 0; i < 10; i++) {
+                                    coins.push({
+                                        x: enemy.x + Math.random() * enemy.width,
+                                        y: enemy.y,
+                                        vy: -5 - Math.random() * 3,
+                                        vx: (Math.random() - 0.5) * 4,
+                                        collected: false
+                                    });
+                                }
+                                playSound('witchDeath');
+                                enemy.dead = true;
+                            }
+                        }
+                    }
+                });
+
+                // 剑击清除毒气
+                projectiles.forEach(proj => {
+                    if (proj.dead || proj.type !== 'poison') return;
+                    const projBox = {
+                        x: proj.x - 20,
+                        y: proj.y - 20,
+                        width: 40,
+                        height: 40
+                    };
+                    if (checkCollision(attackBox, projBox)) {
+                        proj.dead = true;
+                        // 紫色粒子爆炸
+                        for (let i = 0; i < 8; i++) {
+                            particles.push({
+                                x: proj.x,
+                                y: proj.y,
+                                vx: (Math.random() - 0.5) * 5,
+                                vy: (Math.random() - 0.5) * 5,
+                                life: 20,
+                                color: '#9933cc'
+                            });
+                        }
+                        // 奖励2金币
+                        player.coins += 2;
+                        player.levelCoins += 2;
+                        updateUI();
+                    }
+                });
+            }
+
+            if (player.attackTimer > 0) player.attackTimer--;
+            else player.isAttacking = false;
+
+            if (player.attackCooldown > 0) player.attackCooldown--;
+
+            // 攻击特效粒子更新
+            attackParticles = attackParticles.filter(p => {
+                p.life--;
+                p.x += p.vx;
+                p.y += p.vy;
+                return p.life > 0;
+            });
+
+            // 无敌状态
+            if (player.invincible) {
+                player.invincibleTimer--;
+                if (player.invincibleTimer <= 0) {
+                    player.invincible = false;
+                }
+            }
+
+            // 重力和移动
+            player.vy += GRAVITY;
+            player.y += player.vy;
+            player.x += player.vx;
+
+            // 边界限制
+            player.x = Math.max(0, Math.min(player.x, MAP_WIDTH - player.width));
+
+            // 地面碰撞 - 使用固定高度计算，避免下蹲时位置变化
+            const playerBottom = player.y + player.height;
+
+            bricks.forEach(brick => {
+                if (playerBottom >= brick.y && playerBottom <= brick.y + 25 &&
+                    player.x + player.width > brick.x && player.x < brick.x + brick.width &&
+                    player.vy >= 0) {
+                    player.y = brick.y - player.height;
+                    player.vy = 0;
+                    player.isJumping = false;
+                }
+            });
+
+            // 顶金币砖块
+            const headY = player.y - 5;
+            coinBricks.forEach(brick => {
+                if (!brick.hit && headY <= brick.y + brick.height && headY >= brick.y - 10 &&
+                    player.x + player.width > brick.x && player.x < brick.x + brick.width &&
+                    player.vy < 0) {
+                    brick.hit = true;
+                    for (let i = 0; i < brick.coinCount; i++) {
+                        coins.push({
+                            x: brick.x + Math.random() * brick.width,
+                            y: brick.y - 15,
+                            vy: -7 - Math.random() * 4,
+                            vx: (Math.random() - 0.5) * 5,
+                            collected: false
+                        });
+                    }
+                }
+            });
+
+            // 隐形砖块
+            if (hiddenBrick && !hiddenBrick.hit && hiddenBrick.visible) {
+                if (headY <= hiddenBrick.y + hiddenBrick.height && headY >= hiddenBrick.y - 10 &&
+                    player.x + player.width > hiddenBrick.x && player.x < hiddenBrick.x + hiddenBrick.width &&
+                    player.vy < 0) {
+                    hiddenBrick.hit = true;
+                    for (let i = 0; i < hiddenBrick.coinCount; i++) {
+                        coins.push({
+                            x: hiddenBrick.x + Math.random() * hiddenBrick.width,
+                            y: hiddenBrick.y - 15,
+                            vy: -7 - Math.random() * 4,
+                            vx: (Math.random() - 0.5) * 5,
+                            collected: false
+                        });
+                    }
+                }
+            }
+
+            // 第二个隐形砖块（在coinBricks中）
+            coinBricks.forEach(brick => {
+                if (brick.isHidden && !brick.hit) {
+                    if (headY <= brick.y + brick.height && headY >= brick.y - 10 &&
+                        player.x + player.width > brick.x && player.x < brick.x + brick.width &&
+                        player.vy < 0) {
+                        brick.hit = true;
+                        for (let i = 0; i < brick.coinCount; i++) {
+                            coins.push({
+                                x: brick.x + Math.random() * brick.width,
+                                y: brick.y - 15,
+                                vy: -7 - Math.random() * 4,
+                                vx: (Math.random() - 0.5) * 5,
+                                collected: false
+                            });
+                        }
+                    }
+                }
+            });
+
+            // 金币收集
+            coins.forEach(coin => {
+                if (coin.collected) return;
+
+                if (coin.vy !== undefined) {
+                    coin.vy += GRAVITY * 0.5;
+                    coin.y += coin.vy;
+                    coin.x += coin.vx || 0;
+                    if (coin.y > 460) {
+                        coin.y = 460;
+                        coin.vy = 0;
+                        coin.vx = 0;
+                    }
+                }
+
+                const dist = Math.hypot(coin.x - player.x - player.width / 2, coin.y - player.y - player.height / 2);
+                if (dist < 25) {
+                    coin.collected = true;
+                    player.coins++;
+                    player.levelCoins++;
+                    playSound('coin');
+                    updateUI();
+                }
+            });
+
+            coins = coins.filter(c => !c.collected);
+
+            // 敌人更新
+            enemies.forEach(enemy => {
+                if (enemy.dead) return;
+
+                if (enemy.type === 'dartLauncher') {
+                    enemy.timer++;
+                    if (enemy.timer >= 120) {
+                        enemy.timer = 0;
+                        projectiles.push({
+                            type: 'dart',
+                            x: enemy.x - 5,
+                            y: enemy.y + enemy.height / 2 - 5,
+                            vx: -7
+                        });
+                    }
+                } else if (enemy.type === 'snake') {
+                    if (enemy.x < player.x) enemy.x += enemy.vx;
+                    else enemy.x -= enemy.vx;
+
+                    const enemyBox = { x: enemy.x, y: enemy.y, width: enemy.width, height: enemy.height };
+                    const playerBox = { x: player.x, y: player.y, width: player.width, height: player.isCrouching ? player.height * 0.55 : player.height };
+
+                    if (checkCollision(enemyBox, playerBox) && !player.invincible) {
+                        if (!player.isCrouching) {
+                            player.health--;
+                            player.invincible = true;
+                            player.invincibleTimer = 60;
+                            playSound('playerHurt');
+                            updateUI();
+                            if (player.health <= 0) gameOver();
+                        } else {
+                            playSound('block');
+                        }
+                    }
+                } else if (enemy.type === 'witch') {
+                    enemy.hitTimer = Math.max(0, enemy.hitTimer - 1);
+                    enemy.attackTimer++;
+
+                    // 女巫缓慢移动
+                    if (enemy.hitTimer === 0) {
+                        enemy.x += enemy.vx * enemy.moveDir;
+                        if (enemy.x > 1700) enemy.moveDir = -1;
+                        if (enemy.x < 400) enemy.moveDir = 1;
+                    }
+
+                    // 毒气喷射间隔延长到2秒（200帧）
+                    if (enemy.attackTimer >= 200) {
+                        enemy.attackTimer = 0;
+                        projectiles.push({
+                            type: 'poison',
+                            x: enemy.x + (player.x > enemy.x ? enemy.width + 10 : -30),
+                            y: enemy.y + enemy.height / 2,
+                            vx: player.x > enemy.x ? 2.5 : -2.5,
+                            timer: 120,
+                            witchId: enemies.indexOf(enemy)
+                        });
+                    }
+                }
+            });
+
+            enemies = enemies.filter(e => !e.dead);
+
+            // 投射物更新
+            projectiles.forEach(proj => {
+                proj.x += proj.vx;
+
+                if (proj.type === 'poison') {
+                    proj.timer--;
+                    if (proj.timer <= 0) proj.dead = true;
+                }
+
+                const projBox = {
+                    x: proj.x - (proj.type === 'poison' ? 20 : 0),
+                    y: proj.y - (proj.type === 'poison' ? 20 : 0),
+                    width: proj.type === 'poison' ? 40 : 18,
+                    height: proj.type === 'poison' ? 40 : 10
+                };
+                const playerBox = { x: player.x, y: player.y, width: player.width, height: player.isCrouching ? player.height * 0.55 : player.height };
+
+                if (checkCollision(projBox, playerBox) && !player.invincible) {
+                    if (!player.isCrouching) {
+                        player.health--;
+                        player.invincible = true;
+                        player.invincibleTimer = 60;
+                        playSound('playerHurt');
+                        updateUI();
+                        if (player.health <= 0) gameOver();
+                    } else {
+                        playSound('block');
+                    }
+                    if (proj.type === 'dart') proj.dead = true;
+                }
+            });
+
+            projectiles = projectiles.filter(p => !p.dead && p.x > cameraX - 100 && p.x < cameraX + SCREEN_WIDTH + 100);
+
+            // 粒子更新
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+            });
+            particles = particles.filter(p => p.life > 0);
+
+            // 血包
+            if (healthPack && !healthPack.collected) {
+                const packBox = { x: healthPack.x, y: healthPack.y, width: healthPack.width, height: healthPack.height };
+                const playerBox = { x: player.x, y: player.y, width: player.width, height: player.isCrouching ? player.height * 0.55 : player.height };
+
+                if (checkCollision(packBox, playerBox)) {
+                    healthPack.collected = true;
+                    player.health = player.maxHealth; // 100%回血
+                    playSound('heal');
+                    updateUI();
+                }
+            }
+
+            // 门开启
+            const allWitchesDead = currentLevel === 3 && enemies.filter(e => e.type === 'witch' && !e.dead).length === 0;
+            doorOpen = player.levelCoins >= 100 && (currentLevel !== 3 || allWitchesDead);
+
+            // 进门通关
+            if (doorOpen) {
+                const doorBox = { x: door.x, y: door.y, width: door.width, height: door.height };
+                const playerBox = { x: player.x, y: player.y, width: player.width, height: player.isCrouching ? player.height * 0.55 : player.height };
+
+                if (checkCollision(doorBox, playerBox)) {
+                    nextLevel();
+                }
+            }
+
+            // 相机跟随
+            cameraX = player.x - SCREEN_WIDTH / 2 + player.width / 2;
+            cameraX = Math.max(0, Math.min(cameraX, MAP_WIDTH - SCREEN_WIDTH));
+        }
+
+        // ============ 关卡切换 ============
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel > 3) {
+                stopBGM();
+                playSound('victory');
+                startWeddingScene();
+            } else {
+                playSound('levelUp');
+                initLevel(currentLevel);
+            }
+        }
+
+        function gameOver() {
+            gameState = 'gameover';
+            stopBGM();
+            playSound('playerDeath');
+            playSound('gameOver');
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
+        function win() {
+            gameState = 'win';
+            stopBGM();
+            playSound('victory');
+            document.getElementById('winScreen').style.display = 'flex';
+            startWeddingAnimation();
+        }
+
+        function startGame() {
+            initAudio();
+            gameState = 'playing';
+            currentLevel = 1;
+            player.health = player.maxHealth;
+            player.coins = 0;
+            for (let key in keys) {
+                delete keys[key];
+            }
+            initLevel(1);
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('weddingScene').style.display = 'none';
+            startBGM();
+        }
+
+        function restartGame() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('winScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('weddingScene').style.display = 'none';
+            if (weddingAnimId) cancelAnimationFrame(weddingAnimId);
+            if (weddingSceneAnimId) cancelAnimationFrame(weddingSceneAnimId);
+            weddingAnimId = null;
+            weddingSceneAnimId = null;
+            startGame();
+        }
+
+        // ============ 菜单功能 ============
+        let isPaused = false;
+        
+        function togglePause() {
+            isPaused = !isPaused;
+            const menuButton = document.getElementById('menuButton');
+            if (isPaused) {
+                menuButton.textContent = '继续';
+                menuButton.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 50%, #388E3C 100%)';
+            } else {
+                menuButton.textContent = '菜单';
+                menuButton.style.background = 'linear-gradient(135deg, #ffd700 0%, #ff8c00 50%, #ff6600 100%)';
+                hideMenu();
+            }
+        }
+        
+        function showMenu() {
+            if (!isPaused) {
+                document.getElementById('menuDropdown').style.display = 'block';
+            }
+        }
+        
+        function hideMenu() {
+            document.getElementById('menuDropdown').style.display = 'none';
+        }
+        
+        // 点击菜单按钮显示/隐藏菜单
+        document.getElementById('menuButton').addEventListener('click', function(event) {
+            event.stopPropagation();
+            if (isPaused) {
+                togglePause();
+            } else {
+                const menu = document.getElementById('menuDropdown');
+                if (menu.style.display === 'block') {
+                    hideMenu();
+                } else {
+                    showMenu();
+                }
+            }
+        });
+        
+        // 点击页面其他区域隐藏菜单
+        document.addEventListener('click', function() {
+            hideMenu();
+        });
+        
+        // 阻止菜单内部点击事件冒泡
+        document.getElementById('menuDropdown').addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+        
+        // ============ 游戏玩法弹窗功能 ============
+        function showGameplay() {
+            hideMenu();
+            document.getElementById('gameplayModal').style.display = 'flex';
+            // 如果正在游戏中，暂停游戏
+            if (gameState === 'playing' && !isPaused) {
+                togglePause();
+            }
+        }
+        
+        function closeGameplay() {
+            document.getElementById('gameplayModal').style.display = 'none';
+            // 如果是从游戏中打开的，继续游戏
+            if (isPaused) {
+                togglePause();
+            }
+        }
+        
+        // 点击弹窗背景关闭弹窗
+        document.getElementById('gameplayModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeGameplay();
+            }
+        });
+
+        // ============ 主绘制 ============
+        function draw() {
+            ctx.clearRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+            if (gameState === 'playing') {
+                drawBackground();
+                drawBricks();
+                drawCoins();
+                drawHealthPack();
+                drawEnemies();
+                drawDoor();
+                drawParticles();
+                drawPlayer();
+            }
+        }
+
+        // ============ 结婚动画 ============
+        let weddingAnimFrame = 0;
+        let weddingAnimId = null;
+
+        function startWeddingAnimation() {
+            weddingAnimFrame = 0;
+            if (weddingAnimId) cancelAnimationFrame(weddingAnimId);
+            playSound('wedding');
+            animateWedding();
+        }
+
+        function animateWedding() {
+            const weddingCanvas = document.getElementById('weddingCanvas');
+            const wctx = weddingCanvas.getContext('2d');
+            
+            wctx.clearRect(0, 0, 960, 540);
+            
+            // 背景
+            const bgGradient = wctx.createLinearGradient(0, 0, 0, 540);
+            bgGradient.addColorStop(0, '#2d1b4e');
+            bgGradient.addColorStop(0.5, '#4a2c7a');
+            bgGradient.addColorStop(1, '#2d1b4e');
+            wctx.fillStyle = bgGradient;
+            wctx.fillRect(0, 0, 960, 540);
+
+            // 星星
+            for (let i = 0; i < 50; i++) {
+                const sx = (i * 97 + weddingAnimFrame * 0.1) % 960;
+                const sy = (i * 73) % 540;
+                const starSize = 1 + Math.sin(weddingAnimFrame * 0.1 + i) * 0.5;
+                wctx.fillStyle = `rgba(255, 255, 255, ${0.3 + Math.sin(weddingAnimFrame * 0.05 + i) * 0.3})`;
+                wctx.beginPath();
+                wctx.arc(sx, sy, starSize, 0, Math.PI * 2);
+                wctx.fill();
+            }
+
+            // 爱心
+            for (let i = 0; i < 20; i++) {
+                const hx = 200 + i * 30;
+                const hy = 100 + Math.sin(weddingAnimFrame * 0.05 + i) * 20;
+                const hsize = 10 + Math.sin(weddingAnimFrame * 0.08 + i) * 5;
+                wctx.fillStyle = `rgba(255, 105, 180, ${0.3 + Math.sin(weddingAnimFrame * 0.05 + i) * 0.2})`;
+                drawHeart(wctx, hx, hy, hsize);
+            }
+
+            // 动画阶段
+            const phase = Math.floor(weddingAnimFrame / 60);
+            const phaseProgress = (weddingAnimFrame % 60) / 60;
+
+            // 王子猪和美美猪的位置
+            let princeX = 300;
+            let princessX = 660;
+            let kissOffset = 0;
+
+            if (phase >= 1) {
+                // 相互靠近
+                princeX = 300 + phaseProgress * 100;
+                princessX = 660 - phaseProgress * 100;
+            }
+
+            if (phase >= 2) {
+                // 接吻
+                kissOffset = phaseProgress * 8;
+            }
+
+            if (phase >= 3) {
+                // 保持接吻
+                princeX = 400;
+                princessX = 560;
+                kissOffset = 8;
+            }
+
+            // 绘制王子猪
+            drawPrincePigOnCanvas(wctx, princeX, 320, 1.8, kissOffset);
+
+            // 绘制美美猪
+            drawPrincessPigOnCanvas(wctx, princessX, 320, 1.8, kissOffset);
+
+            // 接吻时的爱心特效
+            if (phase >= 2) {
+                const heartCount = phase >= 3 ? 10 : Math.floor(phaseProgress * 10);
+                for (let i = 0; i < heartCount; i++) {
+                    const hx = 480 + Math.cos(weddingAnimFrame * 0.1 + i * 0.6) * (30 + i * 5);
+                    const hy = 240 + Math.sin(weddingAnimFrame * 0.1 + i * 0.6) * (20 + i * 3);
+                    const hsize = 15 + i * 3;
+                    wctx.fillStyle = `rgba(255, 20, 147, ${0.5 - i * 0.03})`;
+                    drawHeart(wctx, hx, hy, hsize);
+                }
+            }
+
+            // 文字提示
+            if (phase >= 2) {
+                wctx.fillStyle = `rgba(255, 182, 193, ${phaseProgress})`;
+                wctx.font = 'bold 36px Arial';
+                wctx.textAlign = 'center';
+                wctx.fillText('💕 幸福美满 💕', 480, 180);
+            }
+
+            weddingAnimFrame++;
+            weddingAnimId = requestAnimationFrame(animateWedding);
+        }
+
+        function drawHeart(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(size / 20, size / 20);
+            ctx.beginPath();
+            ctx.moveTo(0, 5);
+            ctx.bezierCurveTo(-10, -5, -20, 5, 0, 20);
+            ctx.bezierCurveTo(20, 5, 10, -5, 0, 5);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawPrincePigOnCanvas(ctx, x, y, scale, kissOffset) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            const cx = 0;
+            const cy = 0;
+
+            // 王子披风
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 10);
+            ctx.quadraticCurveTo(cx - 30, cy + 20, cx - 25, cy + 50);
+            ctx.lineTo(cx + 5, cy + 48);
+            ctx.quadraticCurveTo(cx + 20, cy + 20, cx + 10, cy - 10);
+            ctx.fill();
+
+            // 身体
+            const bodyGradient = ctx.createRadialGradient(cx - 5, cy - 5, 0, cx, cy, 25);
+            bodyGradient.addColorStop(0, '#ffe0e0');
+            bodyGradient.addColorStop(0.5, '#ffb6c1');
+            bodyGradient.addColorStop(1, '#f5a0b0');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, 18, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 王子装
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, cy + 5);
+            ctx.quadraticCurveTo(cx - 16, cy + 15, cx - 12, cy + 40);
+            ctx.lineTo(cx + 12, cy + 40);
+            ctx.quadraticCurveTo(cx + 16, cy + 15, cx + 14, cy + 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // 金色扣子
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(cx, cy + 15, 3, 0, Math.PI * 2);
+            ctx.arc(cx, cy + 25, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 头部
+            const headGradient = ctx.createRadialGradient(cx - 5, cy - 15, 0, cx, cy - 12, 18);
+            headGradient.addColorStop(0, '#ffe0e0');
+            headGradient.addColorStop(0.6, '#ffb6c1');
+            headGradient.addColorStop(1, '#f0a0b0');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 12, 16, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 皇冠
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, cy - 22);
+            ctx.lineTo(cx - 10, cy - 32);
+            ctx.lineTo(cx - 5, cy - 26);
+            ctx.lineTo(cx, cy - 35);
+            ctx.lineTo(cx + 5, cy - 26);
+            ctx.lineTo(cx + 10, cy - 32);
+            ctx.lineTo(cx + 14, cy - 22);
+            ctx.closePath();
+            ctx.fill();
+
+            // 眼睛
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(cx - 6, cy - 12, 4, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 6, cy - 12, 4, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2a1a0a';
+            ctx.beginPath();
+            ctx.arc(cx - 5, cy - 11, 2.5, 0, Math.PI * 2);
+            ctx.arc(cx + 7, cy - 11, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 腮红
+            ctx.fillStyle = 'rgba(255, 150, 150, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, cy - 8, 3, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 12, cy - 8, 3, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 猪鼻子
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 6, 4, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 微笑
+            ctx.strokeStyle = '#d07080';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(cx, cy - 4, 3, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+
+            // 耳朵
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx - 14, cy - 18, 4, 6, -0.3, 0, Math.PI * 2);
+            ctx.ellipse(cx + 14, cy - 18, 4, 6, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawPrincessPigOnCanvas(ctx, x, y, scale, kissOffset) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+
+            const cx = 0;
+            const cy = 0;
+
+            // 蓬蓬粉色婚纱
+            const dressGradient = ctx.createRadialGradient(cx, cy + 20, 0, cx, cy + 30, 50);
+            dressGradient.addColorStop(0, '#ffb6c1');
+            dressGradient.addColorStop(0.5, '#ff69b4');
+            dressGradient.addColorStop(1, '#ff1493');
+            ctx.fillStyle = dressGradient;
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 5);
+            ctx.quadraticCurveTo(cx - 45, cy + 10, cx - 50, cy + 55);
+            ctx.quadraticCurveTo(cx - 30, cy + 60, cx, cy + 58);
+            ctx.quadraticCurveTo(cx + 30, cy + 60, cx + 50, cy + 55);
+            ctx.quadraticCurveTo(cx + 45, cy + 10, cx + 12, cy - 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // 婚纱泡泡效果
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            for (let i = 0; i < 8; i++) {
+                const angle = i * Math.PI / 4;
+                const bx = cx + Math.cos(angle) * 35;
+                const by = cy + 30 + Math.sin(angle) * 20;
+                ctx.beginPath();
+                ctx.arc(bx, by, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 身体
+            const bodyGradient = ctx.createRadialGradient(cx - 3, cy - 8, 0, cx, cy - 5, 18);
+            bodyGradient.addColorStop(0, '#ffe0e0');
+            bodyGradient.addColorStop(0.5, '#ffb6c1');
+            bodyGradient.addColorStop(1, '#f5a0b0');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 5, 14, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 微卷长发
+            ctx.fillStyle = '#8b4513';
+            ctx.beginPath();
+            ctx.moveTo(cx - 14, cy - 20);
+            ctx.quadraticCurveTo(cx - 35, cy - 10, cx - 32, cy + 35);
+            ctx.quadraticCurveTo(cx - 20, cy + 40, cx - 10, cy + 5);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 14, cy - 20);
+            ctx.quadraticCurveTo(cx + 35, cy - 10, cx + 32, cy + 35);
+            ctx.quadraticCurveTo(cx + 20, cy + 40, cx + 10, cy + 5);
+            ctx.closePath();
+            ctx.fill();
+
+            // 头发卷曲效果
+            ctx.strokeStyle = '#6b3510';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const hy = cy - 15 + i * 8;
+                ctx.beginPath();
+                ctx.arc(cx - 28, hy, 5, 0.5, Math.PI - 0.5);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx + 28, hy, 5, -0.5, Math.PI + 0.5);
+                ctx.stroke();
+            }
+
+            // 头部
+            const headGradient = ctx.createRadialGradient(cx - 5, cy - 25, 0, cx, cy - 22, 18);
+            headGradient.addColorStop(0, '#ffe0e0');
+            headGradient.addColorStop(0.6, '#ffb6c1');
+            headGradient.addColorStop(1, '#f0a0b0');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 22, 15, 13, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 皇冠
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 32);
+            ctx.lineTo(cx - 8, cy - 40);
+            ctx.lineTo(cx - 4, cy - 34);
+            ctx.lineTo(cx, cy - 42);
+            ctx.lineTo(cx + 4, cy - 34);
+            ctx.lineTo(cx + 8, cy - 40);
+            ctx.lineTo(cx + 12, cy - 32);
+            ctx.closePath();
+            ctx.fill();
+
+            // 眼睛
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, cy - 22, 4, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5, cy - 22, 4, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#2a1a0a';
+            ctx.beginPath();
+            ctx.arc(cx - 4, cy - 21, 2.5, 0, Math.PI * 2);
+            ctx.arc(cx + 6, cy - 21, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 腮红
+            ctx.fillStyle = 'rgba(255, 150, 150, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 11, cy - 18, 3, 2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 11, cy - 18, 3, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 猪鼻子
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 16, 4, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 微笑
+            ctx.strokeStyle = '#d07080';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(cx, cy - 14, 3, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+
+            // 耳朵
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx - 13, cy - 28, 4, 6, -0.3, 0, Math.PI * 2);
+            ctx.ellipse(cx + 13, cy - 28, 4, 6, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // ============ 结婚剧情场景 ============
+        let weddingSceneAnimId = null;
+        let weddingSceneFrame = 0;
+        let petals = [];
+        let stars = [];
+
+        function startWeddingScene() {
+            gameState = 'wedding';
+            document.getElementById('weddingScene').style.display = 'block';
+            weddingSceneFrame = 0;
+            petals = [];
+            stars = [];
+            
+            // 初始化星星
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * 960,
+                    y: Math.random() * 540,
+                    size: Math.random() * 2 + 1,
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.02 + 0.01
+                });
+            }
+            
+            // 隐藏重新开始按钮
+            document.getElementById('weddingRestartBtn').style.display = 'none';
+            
+            animateWeddingScene();
+        }
+
+        function animateWeddingScene() {
+            const wsCanvas = document.getElementById('weddingSceneCanvas');
+            const wsCtx = wsCanvas.getContext('2d');
+            
+            wsCtx.clearRect(0, 0, 960, 540);
+            
+            // 绘制星空背景
+            const bgGradient = wsCtx.createLinearGradient(0, 0, 0, 540);
+            bgGradient.addColorStop(0, '#1a0a2e');
+            bgGradient.addColorStop(0.5, '#2d1b4e');
+            bgGradient.addColorStop(1, '#1a0a2e');
+            wsCtx.fillStyle = bgGradient;
+            wsCtx.fillRect(0, 0, 960, 540);
+            
+            // 绘制星星
+            stars.forEach(star => {
+                star.alpha += star.speed;
+                const alpha = 0.3 + Math.sin(star.alpha) * 0.3;
+                wsCtx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+                wsCtx.beginPath();
+                wsCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                wsCtx.fill();
+            });
+            
+            // 生成花瓣
+            if (weddingSceneFrame % 3 === 0) {
+                const colors = ['#ffb6c1', '#ff69b4', '#ffc0cb', '#ffffff', '#ff1493'];
+                petals.push({
+                    x: Math.random() * 960,
+                    y: -20,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    speedY: Math.random() * 2 + 1,
+                    speedX: Math.random() * 2 - 1,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: Math.random() * 0.1 - 0.05
+                });
+            }
+            
+            // 更新和绘制花瓣
+            petals.forEach(petal => {
+                petal.y += petal.speedY;
+                petal.x += petal.speedX + Math.sin(weddingSceneFrame * 0.02) * 0.5;
+                petal.rotation += petal.rotationSpeed;
+                
+                wsCtx.save();
+                wsCtx.translate(petal.x, petal.y);
+                wsCtx.rotate(petal.rotation);
+                wsCtx.fillStyle = petal.color;
+                wsCtx.globalAlpha = 0.8;
+                wsCtx.beginPath();
+                wsCtx.ellipse(0, 0, petal.size, petal.size * 0.6, 0, 0, Math.PI * 2);
+                wsCtx.fill();
+                wsCtx.restore();
+            });
+            
+            // 移除超出屏幕的花瓣
+            petals = petals.filter(p => p.y < 560);
+            
+            // 动画阶段
+            const phase = Math.floor(weddingSceneFrame / 180); // 每3秒一个阶段
+            const phaseProgress = (weddingSceneFrame % 180) / 180;
+            
+            // 角色位置
+            let heroX = 200;
+            let princessX = 760;
+            let showKiss = false;
+            
+            if (phase >= 1) {
+                // 相互靠近
+                heroX = 200 + phaseProgress * 180;
+                princessX = 760 - phaseProgress * 180;
+            }
+            
+            if (phase >= 2) {
+                // 相遇
+                heroX = 380;
+                princessX = 580;
+                showKiss = true;
+            }
+            
+            // 绘制英雄猪（王子装）
+            drawHeroPigForScene(wsCtx, heroX, 350, 2, showKiss);
+            
+            // 绘制美美猪（婚纱）
+            drawPrincessPigForScene(wsCtx, princessX, 350, 2, showKiss);
+            
+            // 接吻特效
+            if (showKiss) {
+                // 爱心特效
+                for (let i = 0; i < 5; i++) {
+                    const hx = 480 + Math.cos(weddingSceneFrame * 0.1 + i) * 30;
+                    const hy = 280 + Math.sin(weddingSceneFrame * 0.1 + i) * 20;
+                    const hsize = 15 + Math.sin(weddingSceneFrame * 0.2 + i) * 5;
+                    wsCtx.fillStyle = `rgba(255, 20, 147, ${0.6 + Math.sin(weddingSceneFrame * 0.1) * 0.3})`;
+                    drawHeartForScene(wsCtx, hx, hy, hsize);
+                }
+                
+                // 光晕效果
+                const glowGradient = wsCtx.createRadialGradient(480, 320, 0, 480, 320, 100);
+                glowGradient.addColorStop(0, 'rgba(255, 182, 193, 0.3)');
+                glowGradient.addColorStop(1, 'rgba(255, 182, 193, 0)');
+                wsCtx.fillStyle = glowGradient;
+                wsCtx.beginPath();
+                wsCtx.arc(480, 320, 100, 0, Math.PI * 2);
+                wsCtx.fill();
+            }
+            
+            // 更新文字
+            const textDiv = document.getElementById('weddingText');
+            if (phase === 0 && weddingSceneFrame < 60) {
+                textDiv.style.opacity = '0';
+            } else if (phase === 0 && weddingSceneFrame >= 60) {
+                textDiv.innerHTML = '王子猪成功救出美美粉红公主！';
+                textDiv.style.opacity = '1';
+            } else if (phase === 1) {
+                textDiv.style.opacity = '0';
+                setTimeout(() => {
+                    textDiv.innerHTML = '在众人的祝福下，他们举行了婚礼。';
+                    textDiv.style.opacity = '1';
+                }, 500);
+            } else if (phase === 2) {
+                textDiv.style.opacity = '0';
+                setTimeout(() => {
+                    textDiv.innerHTML = '从此幸福美满地生活在一起。';
+                    textDiv.style.opacity = '1';
+                }, 500);
+            } else if (phase >= 3) {
+                textDiv.style.opacity = '0';
+                document.getElementById('weddingRestartBtn').style.display = 'block';
+            }
+            
+            weddingSceneFrame++;
+            
+            if (gameState === 'wedding') {
+                weddingSceneAnimId = requestAnimationFrame(animateWeddingScene);
+            }
+        }
+
+        function drawHeartForScene(ctx, x, y, size) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(size / 20, size / 20);
+            ctx.beginPath();
+            ctx.moveTo(0, 5);
+            ctx.bezierCurveTo(-10, -5, -20, 5, 0, 20);
+            ctx.bezierCurveTo(20, 5, 10, -5, 0, 5);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function drawHeroPigForScene(ctx, x, y, scale, isKissing) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            
+            const cx = 0;
+            const cy = 0;
+            
+            // ===== 英式贵族王子猪（婚礼造型） =====
+            
+            // 蓝色丝绒披风（婚礼版，边缘金色镶边）
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy - 8);
+            ctx.quadraticCurveTo(cx - 32, cy + 18, cx - 28, cy + 52);
+            ctx.lineTo(cx + 5, cy + 50);
+            ctx.quadraticCurveTo(cx + 22, cy + 18, cx + 12, cy - 8);
+            ctx.closePath();
+            ctx.fill();
+            // 披风金色镶边
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy - 8);
+            ctx.quadraticCurveTo(cx - 32, cy + 18, cx - 28, cy + 52);
+            ctx.lineTo(cx + 5, cy + 50);
+            ctx.quadraticCurveTo(cx + 22, cy + 18, cx + 12, cy - 8);
+            ctx.closePath();
+            ctx.stroke();
+            // 披风内层
+            ctx.fillStyle = '#1e40af';
+            ctx.beginPath();
+            ctx.moveTo(cx - 7, cy - 6);
+            ctx.quadraticCurveTo(cx - 22, cy + 15, cx - 20, cy + 44);
+            ctx.lineTo(cx + 3, cy + 42);
+            ctx.quadraticCurveTo(cx + 15, cy + 15, cx + 9, cy - 6);
+            ctx.closePath();
+            ctx.fill();
+
+            // 蓝色丝绒靴（婚礼版，金色搭扣）
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy + 38);
+            ctx.lineTo(cx - 10, cy + 55);
+            ctx.lineTo(cx - 2, cy + 55);
+            ctx.lineTo(cx - 3, cy + 38);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, cy + 38);
+            ctx.lineTo(cx + 2, cy + 55);
+            ctx.lineTo(cx + 10, cy + 55);
+            ctx.lineTo(cx + 8, cy + 38);
+            ctx.closePath();
+            ctx.fill();
+            // 靴子金色搭扣
+            ctx.fillStyle = '#ffd700';
+            ctx.fillRect(cx - 9, cy + 42, 7, 3);
+            ctx.fillRect(cx + 2, cy + 42, 7, 3);
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.arc(cx - 5.5, cy + 43.5, 1.5, 0, Math.PI * 2);
+            ctx.arc(cx + 5.5, cy + 43.5, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+            // 靴子高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5.5, cy + 48, 2, 5, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5.5, cy + 48, 2, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 白色修身长裤
+            ctx.fillStyle = '#f5f5f5';
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy + 25);
+            ctx.lineTo(cx - 8, cy + 40);
+            ctx.lineTo(cx - 2, cy + 40);
+            ctx.lineTo(cx - 3, cy + 25);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 3, cy + 25);
+            ctx.lineTo(cx + 2, cy + 40);
+            ctx.lineTo(cx + 8, cy + 40);
+            ctx.lineTo(cx + 6, cy + 25);
+            ctx.closePath();
+            ctx.fill();
+
+            // 身体（粉色猪身体）
+            const bodyGradient = ctx.createRadialGradient(cx - 3, cy - 3, 0, cx, cy, 20);
+            bodyGradient.addColorStop(0, '#ffe8e8');
+            bodyGradient.addColorStop(0.5, '#ffb6c1');
+            bodyGradient.addColorStop(1, '#f5a0b0');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + 5, 16, 18, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 蓝色丝绒喜服（婚礼版）
+            ctx.fillStyle = '#1e3a8a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 5);
+            ctx.quadraticCurveTo(cx - 15, cy + 8, cx - 10, cy + 28);
+            ctx.lineTo(cx + 10, cy + 28);
+            ctx.quadraticCurveTo(cx + 15, cy + 8, cx + 12, cy - 5);
+            ctx.closePath();
+            ctx.fill();
+            // 喜服金色刺绣
+            ctx.strokeStyle = '#ffd700';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy - 2);
+            ctx.lineTo(cx - 8, cy + 25);
+            ctx.moveTo(cx + 8, cy - 2);
+            ctx.lineTo(cx + 8, cy + 25);
+            ctx.stroke();
+            // 领口金色刺绣
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy - 3);
+            ctx.lineTo(cx + 6, cy - 3);
+            ctx.stroke();
+
+            // 白色高领衬衫
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(cx - 5, cy - 3);
+            ctx.lineTo(cx - 4, cy + 3);
+            ctx.lineTo(cx + 4, cy + 3);
+            ctx.lineTo(cx + 5, cy - 3);
+            ctx.closePath();
+            ctx.fill();
+
+            // 头部
+            const headGradient = ctx.createRadialGradient(cx - 4, cy - 18, 0, cx, cy - 12, 14);
+            headGradient.addColorStop(0, '#ffe8e8');
+            headGradient.addColorStop(0.6, '#ffc0cb');
+            headGradient.addColorStop(1, '#f0a8b8');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 12, 14, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 深棕色短发
+            ctx.fillStyle = '#4a3728';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 20, 15, 8, 0, Math.PI, 0);
+            ctx.fill();
+            // 刘海
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 18);
+            ctx.quadraticCurveTo(cx - 6, cy - 14, cx, cy - 18);
+            ctx.quadraticCurveTo(cx + 6, cy - 14, cx + 12, cy - 18);
+            ctx.lineTo(cx + 12, cy - 22);
+            ctx.lineTo(cx - 12, cy - 22);
+            ctx.closePath();
+            ctx.fill();
+            // 头发高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5, cy - 21, 3, 2, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 金色婚礼头冠（镶嵌蓝色宝石）
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.moveTo(cx - 11, cy - 26);
+            ctx.lineTo(cx - 8, cy - 36);
+            ctx.lineTo(cx - 4, cy - 30);
+            ctx.lineTo(cx, cy - 38);
+            ctx.lineTo(cx + 4, cy - 30);
+            ctx.lineTo(cx + 8, cy - 36);
+            ctx.lineTo(cx + 11, cy - 26);
+            ctx.closePath();
+            ctx.fill();
+            // 头冠高光
+            ctx.fillStyle = '#ffed4a';
+            ctx.beginPath();
+            ctx.moveTo(cx - 9, cy - 27);
+            ctx.lineTo(cx - 7, cy - 33);
+            ctx.lineTo(cx - 3, cy - 28);
+            ctx.lineTo(cx, cy - 34);
+            ctx.lineTo(cx + 3, cy - 28);
+            ctx.lineTo(cx + 7, cy - 33);
+            ctx.lineTo(cx + 9, cy - 27);
+            ctx.closePath();
+            ctx.fill();
+            // 蓝色宝石
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(cx, cy - 33, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#5dade2';
+            ctx.beginPath();
+            ctx.arc(cx - 0.5, cy - 33.5, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 眼睛（大而明亮，虹猫风格）
+            if (isKissing) {
+                // 闭眼微笑
+                ctx.strokeStyle = '#2a1a0a';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(cx - 5, cy - 14, 4, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx + 5, cy - 14, 4, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+            } else {
+                // 睁眼
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.ellipse(cx - 5, cy - 14, 4.5, 5.5, 0, 0, Math.PI * 2);
+                ctx.ellipse(cx + 5, cy - 14, 4.5, 5.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // 眼珠
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.arc(cx - 4, cy - 13, 2.8, 0, Math.PI * 2);
+                ctx.arc(cx + 6, cy - 13, 2.8, 0, Math.PI * 2);
+                ctx.fill();
+                // 眼睛高光
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(cx - 3, cy - 15, 1.3, 0, Math.PI * 2);
+                ctx.arc(cx + 7, cy - 15, 1.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 剑眉
+            ctx.strokeStyle = '#2a1a0a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx - 9, cy - 20);
+            ctx.quadraticCurveTo(cx - 5, cy - 22, cx - 1, cy - 20);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + 1, cy - 20);
+            ctx.quadraticCurveTo(cx + 5, cy - 22, cx + 9, cy - 20);
+            ctx.stroke();
+
+            // 红色腮红
+            ctx.fillStyle = 'rgba(255, 100, 100, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 10, cy - 10, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 10, cy - 10, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 猪鼻子
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 8, 4.5, 3.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#cc5566';
+            ctx.beginPath();
+            ctx.ellipse(cx - 1.5, cy - 8, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 1.5, cy - 8, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 0.8, cy - 9.2, 0.8, 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 微笑
+            ctx.strokeStyle = '#cc5566';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(cx, cy - 4, 3.5, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+
+            // 耳朵
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, cy - 18, 4.5, 6.5, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, cy - 18, 2.8, 4, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ffb6c1';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, cy - 18, 4.5, 6.5, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, cy - 18, 2.8, 4, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawPrincessPigForScene(ctx, x, y, scale, isKissing) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            
+            const cx = 0;
+            const cy = 0;
+            
+            // ===== 英式贵族公主猪（婚礼造型） =====
+            
+            // 白色婚纱（拖地长裙，精致刺绣）
+            const dressGradient = ctx.createRadialGradient(cx, cy + 15, 0, cx, cy + 35, 60);
+            dressGradient.addColorStop(0, '#ffffff');
+            dressGradient.addColorStop(0.4, '#f8f8ff');
+            dressGradient.addColorStop(0.8, '#f0f0f8');
+            dressGradient.addColorStop(1, '#e8e8f0');
+            ctx.fillStyle = dressGradient;
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy - 5);
+            ctx.quadraticCurveTo(cx - 45, cy + 15, cx - 52, cy + 65);
+            ctx.quadraticCurveTo(cx - 28, cy + 70, cx, cy + 68);
+            ctx.quadraticCurveTo(cx + 28, cy + 70, cx + 52, cy + 65);
+            ctx.quadraticCurveTo(cx + 45, cy + 15, cx + 10, cy - 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 婚纱精致刺绣（金色花纹）
+            ctx.strokeStyle = '#d4af37';
+            ctx.lineWidth = 1;
+            for (let i = -2; i <= 2; i++) {
+                ctx.beginPath();
+                ctx.moveTo(cx + i * 12, cy + 20);
+                ctx.quadraticCurveTo(cx + i * 15, cy + 42, cx + i * 18, cy + 62);
+                ctx.stroke();
+            }
+            // 裙摆边缘金色刺绣
+            ctx.beginPath();
+            ctx.moveTo(cx - 48, cy + 62);
+            ctx.quadraticCurveTo(cx - 25, cy + 67, cx, cy + 65);
+            ctx.quadraticCurveTo(cx + 25, cy + 67, cx + 48, cy + 62);
+            ctx.stroke();
+            
+            // 婚纱蕾丝花边
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const bx = cx + Math.cos(angle) * 42;
+                const by = cy + 38 + Math.sin(angle) * 22;
+                ctx.beginPath();
+                ctx.arc(bx, by, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 白色高跟鞋
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy + 58);
+            ctx.lineTo(cx - 8, cy + 72);
+            ctx.lineTo(cx - 3, cy + 72);
+            ctx.lineTo(cx - 4, cy + 58);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 4, cy + 58);
+            ctx.lineTo(cx + 3, cy + 72);
+            ctx.lineTo(cx + 8, cy + 72);
+            ctx.lineTo(cx + 6, cy + 58);
+            ctx.closePath();
+            ctx.fill();
+            // 鞋跟
+            ctx.fillStyle = '#f0f0f0';
+            ctx.beginPath();
+            ctx.moveTo(cx - 6, cy + 68);
+            ctx.lineTo(cx - 6.5, cy + 72);
+            ctx.lineTo(cx - 4.5, cy + 72);
+            ctx.lineTo(cx - 4, cy + 68);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(cx + 4, cy + 68);
+            ctx.lineTo(cx + 4.5, cy + 72);
+            ctx.lineTo(cx + 6.5, cy + 72);
+            ctx.lineTo(cx + 6, cy + 68);
+            ctx.closePath();
+            ctx.fill();
+            // 鞋子高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 5.5, cy + 65, 1.5, 3, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 5.5, cy + 65, 1.5, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 身体（更圆润）
+            const bodyGradient = ctx.createRadialGradient(cx - 3, cy - 5, 0, cx, cy - 2, 16);
+            bodyGradient.addColorStop(0, '#ffe8e8');
+            bodyGradient.addColorStop(0.5, '#ffc0cb');
+            bodyGradient.addColorStop(1, '#f5a8b8');
+            ctx.fillStyle = bodyGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 2, 13, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 白色上衣（婚纱上衣）
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(cx - 10, cy - 5);
+            ctx.quadraticCurveTo(cx - 12, cy + 5, cx - 8, cy + 20);
+            ctx.lineTo(cx + 8, cy + 20);
+            ctx.quadraticCurveTo(cx + 12, cy + 5, cx + 10, cy - 5);
+            ctx.closePath();
+            ctx.fill();
+            // 上衣蕾丝花边
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy + 18);
+            ctx.quadraticCurveTo(cx - 10, cy + 20, cx - 8, cy + 22);
+            ctx.lineTo(cx + 8, cy + 22);
+            ctx.quadraticCurveTo(cx + 10, cy + 20, cx + 8, cy + 18);
+            ctx.closePath();
+            ctx.fill();
+
+            // 金色腰带
+            ctx.fillStyle = '#d4af37';
+            ctx.fillRect(cx - 10, cy + 8, 20, 5);
+            ctx.fillStyle = '#f0c040';
+            ctx.beginPath();
+            ctx.arc(cx, cy + 10.5, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // 腰带宝石
+            ctx.fillStyle = '#ff69b4';
+            ctx.beginPath();
+            ctx.arc(cx, cy + 10.5, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 粉色长发披肩（柔顺有光泽）
+            const hairGradient = ctx.createLinearGradient(cx - 30, cy - 15, cx + 30, cy + 30);
+            hairGradient.addColorStop(0, '#ff69b4');
+            hairGradient.addColorStop(0.5, '#ff85c0');
+            hairGradient.addColorStop(1, '#ffb6d9');
+            ctx.fillStyle = hairGradient;
+            // 左侧长发
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 25);
+            ctx.quadraticCurveTo(cx - 38, cy - 15, cx - 35, cy + 42);
+            ctx.quadraticCurveTo(cx - 25, cy + 52, cx - 8, cy + 12);
+            ctx.closePath();
+            ctx.fill();
+            // 右侧长发
+            ctx.beginPath();
+            ctx.moveTo(cx + 12, cy - 25);
+            ctx.quadraticCurveTo(cx + 38, cy - 15, cx + 35, cy + 42);
+            ctx.quadraticCurveTo(cx + 25, cy + 52, cx + 8, cy + 12);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 头发高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 22, cy + 5, 4, 12, -0.3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(cx + 22, cy + 8, 3, 10, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 刘海
+            ctx.fillStyle = '#ff85c0';
+            ctx.beginPath();
+            ctx.moveTo(cx - 12, cy - 25);
+            ctx.quadraticCurveTo(cx - 6, cy - 18, cx, cy - 22);
+            ctx.quadraticCurveTo(cx + 6, cy - 18, cx + 12, cy - 25);
+            ctx.lineTo(cx + 12, cy - 30);
+            ctx.lineTo(cx - 12, cy - 30);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 头部（更可爱）
+            const headGradient = ctx.createRadialGradient(cx - 4, cy - 28, 0, cx, cy - 22, 14);
+            headGradient.addColorStop(0, '#ffe8e8');
+            headGradient.addColorStop(0.6, '#ffc0cb');
+            headGradient.addColorStop(1, '#f0a8b8');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 22, 14, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 猪鼻子（精致）
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy - 18, 4.5, 3.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // 鼻孔
+            ctx.fillStyle = '#cc5566';
+            ctx.beginPath();
+            ctx.ellipse(cx - 1.5, cy - 18, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 1.5, cy - 18, 1.2, 1.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // 鼻子高光
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 0.8, cy - 19.2, 0.8, 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 眼睛（大而明亮，蓝兔风格，长睫毛）
+            if (isKissing) {
+                // 闭眼微笑
+                ctx.strokeStyle = '#2a1a0a';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.arc(cx - 5, cy - 24, 3.5, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(cx + 5, cy - 24, 3.5, 0.2, Math.PI - 0.2);
+                ctx.stroke();
+            } else {
+                // 睁眼
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.ellipse(cx - 5, cy - 24, 4.5, 5.5, 0, 0, Math.PI * 2);
+                ctx.ellipse(cx + 5, cy - 24, 4.5, 5.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // 眼珠
+                ctx.fillStyle = '#1a1a1a';
+                ctx.beginPath();
+                ctx.arc(cx - 4, cy - 23, 2.8, 0, Math.PI * 2);
+                ctx.arc(cx + 6, cy - 23, 2.8, 0, Math.PI * 2);
+                ctx.fill();
+                // 眼睛高光
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(cx - 3, cy - 25, 1.3, 0, Math.PI * 2);
+                ctx.arc(cx + 7, cy - 25, 1.3, 0, Math.PI * 2);
+                ctx.fill();
+                // 长睫毛
+                ctx.strokeStyle = '#2a1a0a';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(cx - 9, cy - 26);
+                ctx.lineTo(cx - 10, cy - 28);
+                ctx.moveTo(cx - 7, cy - 27);
+                ctx.lineTo(cx - 7.5, cy - 29);
+                ctx.moveTo(cx - 5, cy - 27);
+                ctx.lineTo(cx - 5, cy - 29);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(cx + 9, cy - 26);
+                ctx.lineTo(cx + 10, cy - 28);
+                ctx.moveTo(cx + 7, cy - 27);
+                ctx.lineTo(cx + 7.5, cy - 29);
+                ctx.moveTo(cx + 5, cy - 27);
+                ctx.lineTo(cx + 5, cy - 29);
+                ctx.stroke();
+            }
+            
+            // 眉毛
+            ctx.strokeStyle = '#8b4444';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.moveTo(cx - 9, cy - 30);
+            ctx.quadraticCurveTo(cx - 5, cy - 32, cx - 1, cy - 30);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(cx + 1, cy - 30);
+            ctx.quadraticCurveTo(cx + 5, cy - 32, cx + 9, cy - 30);
+            ctx.stroke();
+            
+            // 粉色腮红
+            ctx.fillStyle = 'rgba(255, 130, 130, 0.45)';
+            ctx.beginPath();
+            ctx.ellipse(cx - 10, cy - 20, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx + 10, cy - 20, 3.5, 2.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 嘴巴（微笑）
+            ctx.strokeStyle = '#cc5566';
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            ctx.arc(cx, cy - 14, 3.5, 0.2, Math.PI - 0.2);
+            ctx.stroke();
+            
+            // 耳朵（立体）
+            ctx.fillStyle = '#ffc0cb';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, cy - 28, 4.5, 6.5, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx - 12, cy - 28, 2.8, 4, -0.35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ffc0cb';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, cy - 28, 4.5, 6.5, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff9aab';
+            ctx.beginPath();
+            ctx.ellipse(cx + 12, cy - 28, 2.8, 4, 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 银色皇冠（更精致）
+            ctx.fillStyle = '#c0c0c0';
+            ctx.beginPath();
+            ctx.moveTo(cx - 11, cy - 32);
+            ctx.lineTo(cx - 7, cy - 44);
+            ctx.lineTo(cx - 3, cy - 36);
+            ctx.lineTo(cx, cy - 46);
+            ctx.lineTo(cx + 3, cy - 36);
+            ctx.lineTo(cx + 7, cy - 44);
+            ctx.lineTo(cx + 11, cy - 32);
+            ctx.closePath();
+            ctx.fill();
+            // 皇冠高光
+            ctx.fillStyle = '#e8e8e8';
+            ctx.beginPath();
+            ctx.moveTo(cx - 8, cy - 33);
+            ctx.lineTo(cx - 5, cy - 40);
+            ctx.lineTo(cx - 2, cy - 34);
+            ctx.lineTo(cx, cy - 42);
+            ctx.lineTo(cx + 2, cy - 34);
+            ctx.lineTo(cx + 5, cy - 40);
+            ctx.lineTo(cx + 8, cy - 33);
+            ctx.closePath();
+            ctx.fill();
+            // 皇冠宝石
+            ctx.fillStyle = '#ff69b4';
+            ctx.beginPath();
+            ctx.arc(cx, cy - 40, 2.8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#ff85c0';
+            ctx.beginPath();
+            ctx.arc(cx - 0.5, cy - 40.5, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 白色头纱（拖地）
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(cx - 15, cy - 35);
+            ctx.quadraticCurveTo(cx - 40, cy - 25, cx - 38, cy + 45);
+            ctx.quadraticCurveTo(cx - 20, cy + 55, cx, cy + 50);
+            ctx.quadraticCurveTo(cx + 20, cy + 55, cx + 38, cy + 45);
+            ctx.quadraticCurveTo(cx + 40, cy - 25, cx + 15, cy - 35);
+            ctx.closePath();
+            ctx.fill();
+            // 头纱蕾丝
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cx - 15, cy - 35);
+            ctx.quadraticCurveTo(cx - 40, cy - 25, cx - 38, cy + 45);
+            ctx.quadraticCurveTo(cx - 20, cy + 55, cx, cy + 50);
+            ctx.quadraticCurveTo(cx + 20, cy + 55, cx + 38, cy + 45);
+            ctx.quadraticCurveTo(cx + 40, cy - 25, cx + 15, cy - 35);
+            ctx.closePath();
+            ctx.stroke();
+            
+            // 白色捧花
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(cx + 18, cy + 5, 8, 5, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            // 捧花花瓣
+            ctx.fillStyle = '#ffb6d9';
+            for (let i = 0; i < 6; i++) {
+                const angle = (i / 6) * Math.PI * 2;
+                const px = cx + 18 + Math.cos(angle) * 5;
+                const py = cy + 5 + Math.sin(angle) * 3;
+                ctx.beginPath();
+                ctx.ellipse(px, py, 3, 2, angle, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // 捧花中心
+            ctx.fillStyle = '#ffd700';
+            ctx.beginPath();
+            ctx.arc(cx + 18, cy + 5, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // ============ 游戏循环 ============
+        function gameLoop() {
+            if (!isPaused) {
+                update();
+                draw();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ============ 键盘事件 ============
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // 启动游戏
+        gameLoop();
+    </script>
+</body>
+</html>
